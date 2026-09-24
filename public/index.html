@@ -1,61 +1,85 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
+
 <head>
+
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<meta
+name="viewport"
+content="width=device-width, initial-scale=1.0"
+>
+
 <title>MindSpace</title>
 
+<script src="/socket.io/socket.io.js"></script>
+
 <style>
-*{box-sizing:border-box}
+
+*{
+  box-sizing:border-box;
+}
 
 body{
   margin:0;
   font-family:Arial,Helvetica,sans-serif;
-  background:#f7f7fc;
-  color:#17194d;
+  background:#f6f7fb;
+  color:#222;
 }
 
-button,input{
+button,
+input{
   font:inherit;
 }
 
+/* HEADER */
+
 .header{
-  height:82px;
+  height:70px;
   background:white;
   border-bottom:1px solid #e5e5ef;
   display:flex;
   align-items:center;
   justify-content:space-between;
   padding:0 30px;
+  position:sticky;
+  top:0;
+  z-index:10;
 }
 
 .brand{
   display:flex;
   align-items:center;
-  gap:12px;
-  font-size:27px;
-  font-weight:800;
-}
-
-.brand img{
-  width:55px;
-  height:55px;
-  object-fit:contain;
-}
-
-.access{
-  background:#eee7ff;
-  color:#4d38db;
-  padding:11px 18px;
-  border-radius:25px;
+  gap:10px;
+  font-size:24px;
   font-weight:bold;
 }
 
-.layout{
-  display:grid;
-  grid-template-columns:270px 1fr;
-  min-height:calc(100vh - 82px);
+.brand img{
+  width:42px;
+  height:42px;
+  object-fit:contain;
+  border-radius:10px;
 }
+
+.access{
+  background:#e9f8ef;
+  color:#16743c;
+  padding:9px 14px;
+  border-radius:20px;
+  font-size:13px;
+  font-weight:bold;
+}
+
+/* LAYOUT */
+
+.layout{
+  min-height:calc(100vh - 70px);
+  display:grid;
+  grid-template-columns:250px 1fr;
+}
+
+/* SIDEBAR */
 
 .sidebar{
   background:white;
@@ -65,140 +89,167 @@ button,input{
 
 .sidebar h3{
   margin-top:0;
+  margin-bottom:18px;
 }
 
 .topic{
+  display:block;
   width:100%;
-  padding:14px;
-  margin:5px 0;
-  border:0;
-  border-radius:12px;
-  background:white;
   text-align:left;
+  background:transparent;
+  border:0;
+  padding:13px 14px;
+  margin:5px 0;
+  border-radius:10px;
   cursor:pointer;
-  font-weight:600;
-  color:#17194d;
+  color:#333;
 }
 
-.topic:hover,
-.topic.active{
-  background:#f0eaff;
-  color:#4d38db;
+.topic:hover{
+  background:#f0f1ff;
 }
+
+.topic.active{
+  background:#e8e9ff;
+  font-weight:bold;
+}
+
+.sidebar hr{
+  border:0;
+  border-top:1px solid #eee;
+  margin:20px 0;
+}
+
+/* CONTENT */
 
 .content{
-  padding:30px;
+  padding:35px;
+  width:100%;
 }
 
+/* HOME */
+
 .home{
-  max-width:1000px;
-  margin:auto;
+  max-width:850px;
+  margin:30px auto;
   text-align:center;
 }
 
 .main-logo{
-  width:150px;
-  height:150px;
+  width:145px;
+  height:145px;
   object-fit:contain;
-  margin-top:20px;
+  border-radius:25px;
+  margin-bottom:10px;
 }
 
 .home h1{
-  font-size:54px;
+  font-size:48px;
   margin:5px 0;
-  color:#3227a6;
 }
 
 .tagline{
-  font-size:23px;
-  color:#555;
+  color:#777;
+  margin-bottom:30px;
 }
 
 .privacy{
-  max-width:760px;
-  margin:35px auto;
-  padding:30px;
-  border-radius:25px;
-  background:linear-gradient(135deg,#f1eaff,#fff1fa);
-  text-align:left;
+  background:white;
+  border:1px solid #e5e5ef;
+  border-radius:20px;
+  padding:25px;
+  line-height:1.6;
+  margin-bottom:20px;
 }
 
 .privacy h2{
-  color:#4938db;
-}
-
-.privacy p{
-  font-size:18px;
-  line-height:1.6;
-}
-
-.price{
-  color:#4938db;
-  font-size:34px;
-  font-weight:800;
+  margin-top:0;
 }
 
 .topic-box{
-  max-width:600px;
-  margin:25px auto;
-  padding:25px;
+  max-width:700px;
+  margin:30px auto;
   background:white;
+  border:1px solid #e5e5ef;
   border-radius:20px;
-  box-shadow:0 10px 40px #33333310;
+  padding:30px;
+  text-align:center;
 }
 
-.primary{
-  background:#6655ee;
-  color:white;
-  border:0;
-  border-radius:12px;
-  padding:13px 22px;
+.price{
+  font-size:42px;
   font-weight:bold;
+  margin:20px 0;
+}
+
+/* BUTTONS */
+
+.primary{
+  border:0;
+  background:#5b5ce2;
+  color:white;
+  padding:13px 22px;
+  border-radius:10px;
   cursor:pointer;
+  font-weight:bold;
 }
 
 .primary:hover{
-  background:#5140d8;
+  background:#4b4ccf;
 }
 
 .secondary{
-  background:#eeeef5;
-  color:#333;
-  border:0;
-  border-radius:12px;
-  padding:12px 18px;
+  border:1px solid #ddd;
+  background:white;
+  padding:9px 16px;
+  border-radius:9px;
   cursor:pointer;
 }
 
+/* CHAT */
+
 .chat{
   max-width:900px;
-  height:650px;
+  height:calc(100vh - 140px);
   margin:auto;
   background:white;
-  border-radius:20px;
+  border:1px solid #e5e5ef;
+  border-radius:18px;
   overflow:hidden;
-  box-shadow:0 10px 40px #33333312;
   display:flex;
   flex-direction:column;
 }
 
 .chat-header{
-  padding:18px;
-  border-bottom:1px solid #e6e6ef;
+  padding:18px 20px;
+  border-bottom:1px solid #eee;
   display:flex;
   justify-content:space-between;
+  align-items:center;
+  background:white;
 }
 
 .messages{
   flex:1;
   overflow-y:auto;
   padding:20px;
-  background:#fafaff;
+  background:#f8f9fc;
+}
+
+.waiting{
+  text-align:center;
+  background:white;
+  border:1px solid #e5e5ef;
+  border-radius:15px;
+  padding:25px;
+  max-width:500px;
+  margin:40px auto;
+  color:#555;
 }
 
 .message{
   display:flex;
-  margin:10px 0;
+  margin:9px 0;
 }
 
 .message.me{
@@ -207,31 +258,23 @@ button,input{
 
 .bubble{
   max-width:75%;
-  padding:12px 15px;
+  background:#e9e9f8;
+  padding:11px 15px;
   border-radius:15px;
-  background:white;
-  border:1px solid #e1e1ec;
-  white-space:pre-wrap;
-  overflow-wrap:anywhere;
+  word-wrap:break-word;
 }
 
-.me .bubble{
-  background:#6655ee;
+.message.me .bubble{
+  background:#5b5ce2;
   color:white;
-  border:0;
-}
-
-.waiting{
-  text-align:center;
-  padding:50px 20px;
-  color:#666;
 }
 
 .composer{
   display:flex;
   gap:10px;
   padding:15px;
-  border-top:1px solid #e6e6ef;
+  border-top:1px solid #eee;
+  background:white;
 }
 
 .composer input{
@@ -239,7 +282,14 @@ button,input{
   border:1px solid #ddd;
   border-radius:12px;
   padding:13px;
+  outline:none;
 }
+
+.composer input:focus{
+  border-color:#5b5ce2;
+}
+
+/* OWNER */
 
 .owner{
   max-width:1000px;
@@ -254,9 +304,23 @@ button,input{
   border:1px solid #e5e5ef;
 }
 
-.hide{
-  display:none!important;
+.owner-card small{
+  color:#777;
 }
+
+.owner-chat-title{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+/* HIDDEN */
+
+.hide{
+  display:none !important;
+}
+
+/* MOBILE */
 
 @media(max-width:750px){
 
@@ -275,10 +339,25 @@ button,input{
   .sidebar{
     border-right:0;
     border-bottom:1px solid #e5e5ef;
+    padding:15px;
+  }
+
+  .sidebar h3{
+    margin-bottom:10px;
+  }
+
+  .topic{
+    display:inline-block;
+    width:auto;
+    margin:3px;
   }
 
   .content{
     padding:15px;
+  }
+
+  .home{
+    margin:20px auto;
   }
 
   .home h1{
@@ -291,22 +370,40 @@ button,input{
   }
 
   .chat{
-    height:calc(100vh - 180px);
+    height:calc(100vh - 250px);
   }
+
+  .bubble{
+    max-width:85%;
+  }
+
 }
+
 </style>
+
 </head>
 
 <body>
 
+<!-- HEADER -->
+
 <header class="header">
 
   <div class="brand">
-    <img src="/mindspace-logo.png">
+
+    <img
+      src="/mindspace-logo.png"
+      alt="MindSpace logo"
+    >
+
     <span>MindSpace</span>
+
   </div>
 
-  <div id="accessBadge" class="access hide">
+  <div
+    id="accessBadge"
+    class="access hide"
+  >
     24-Hour Access
   </div>
 
@@ -315,62 +412,97 @@ button,input{
 
 <div class="layout">
 
+
+<!-- SIDEBAR -->
+
 <aside class="sidebar">
 
 <h3>What's on your mind?</h3>
 
-<button class="topic" onclick="chooseTopic('Relationship',this)">
+<button
+  class="topic"
+  onclick="chooseTopic('Relationship',this)"
+>
 ❤️ Relationship
 </button>
 
-<button class="topic" onclick="chooseTopic('Friends',this)">
+<button
+  class="topic"
+  onclick="chooseTopic('Friends',this)"
+>
 👥 Friends
 </button>
 
-<button class="topic" onclick="chooseTopic('Love',this)">
+<button
+  class="topic"
+  onclick="chooseTopic('Love',this)"
+>
 💕 Love
 </button>
 
-<button class="topic" onclick="chooseTopic('Family',this)">
+<button
+  class="topic"
+  onclick="chooseTopic('Family',this)"
+>
 🏠 Family
 </button>
 
-<button class="topic" onclick="chooseTopic('Studies',this)">
+<button
+  class="topic"
+  onclick="chooseTopic('Studies',this)"
+>
 📚 Studies
 </button>
 
-<button class="topic" onclick="chooseTopic('Work',this)">
+<button
+  class="topic"
+  onclick="chooseTopic('Work',this)"
+>
 💼 Work
 </button>
 
-<button class="topic" onclick="chooseTopic('Stress',this)">
+<button
+  class="topic"
+  onclick="chooseTopic('Stress',this)"
+>
 🌿 Stress
 </button>
 
-<button class="topic" onclick="chooseTopic('Other',this)">
+<button
+  class="topic"
+  onclick="chooseTopic('Other',this)"
+>
 💭 Something else
 </button>
 
 <hr>
 
-<button class="topic" onclick="showOwner()">
+<button
+  class="topic"
+  onclick="showOwner()"
+>
 🔐 Listener
 </button>
 
 </aside>
 
 
+<!-- MAIN CONTENT -->
+
 <main class="content">
 
 
 <!-- HOME -->
 
-<section id="home" class="home">
+<section
+  id="home"
+  class="home"
+>
 
 <img
-class="main-logo"
-src="/mindspace-logo.png"
-alt="MindSpace"
+  class="main-logo"
+  src="/mindspace-logo.png"
+  alt="MindSpace"
 >
 
 <h1>MindSpace</h1>
@@ -385,13 +517,14 @@ Talk • Share • Feel Better
 <h2>Your chat is private.</h2>
 
 <p>
-No need to share your phone number, name,
-email ID or anything else.
+No need to share your phone number,
+name, email ID or anything else.
 </p>
 
 <p>
 Choose a topic, pay <b>₹11</b> and unlock
-your private chat with me for <b>24 hours</b>.
+your private chat with me for
+<b>24 hours</b>.
 </p>
 
 <p>
@@ -400,6 +533,7 @@ You can pay ₹11 again to continue.
 </p>
 
 </div>
+
 
 <div class="topic-box">
 
@@ -416,21 +550,30 @@ Choose whatever you would like to talk about.
 
 <!-- PAYMENT -->
 
-<section id="payment" class="topic-box hide">
+<section
+  id="payment"
+  class="topic-box hide"
+>
 
-<h2 id="selectedTopic"></h2>
+<h2 id="selectedTopic">
+</h2>
 
 <p>
 Your private chat will be available for 24 hours.
 </p>
 
-<div class="price">₹11</div>
+<div class="price">
+₹11
+</div>
 
 <p>
 One payment = 24 hours of chat access.
 </p>
 
-<button class="primary" onclick="payAndStart()">
+<button
+  class="primary"
+  onclick="payAndStart()"
+>
 Pay ₹11 & Unlock Chat
 </button>
 
@@ -441,37 +584,59 @@ Payment is currently in testing mode.
 </section>
 
 
-<!-- CHAT -->
+<!-- CUSTOMER CHAT -->
 
-<section id="chat" class="chat hide">
+<section
+  id="chat"
+  class="chat hide"
+>
 
 <div class="chat-header">
 
 <div>
-<b id="chatTitle">MindSpace Chat</b>
+
+<b id="chatTitle">
+MindSpace Chat
+</b>
+
 <br>
-<small id="timer"></small>
+
+<small id="timer">
+</small>
+
 </div>
 
-<button class="secondary" onclick="closeChat()">
+<button
+  class="secondary"
+  onclick="closeChat()"
+>
 Close
 </button>
 
 </div>
 
 
-<div id="messages" class="messages">
+<div
+  id="messages"
+  class="messages"
+>
 
-<div class="waiting" id="waitingMessage">
+<div
+  class="waiting"
+  id="waitingMessage"
+>
 
-<h3>Your private chat is ready.</h3>
+<h3>
+Your private chat is ready.
+</h3>
 
 <p>
 You are now waiting for the listener to join.
 </p>
 
 <p>
-Your conversation will be visible only to you and the listener.
+Your conversation will be visible only to you
+and the listener.
 </p>
 
 </div>
@@ -482,13 +647,16 @@ Your conversation will be visible only to you and the listener.
 <div class="composer">
 
 <input
-id="messageInput"
-placeholder="Write your message..."
-maxlength="2000"
-onkeydown="if(event.key==='Enter')sendMessage()"
+  id="messageInput"
+  placeholder="Write your message..."
+  maxlength="2000"
+  onkeydown="if(event.key==='Enter')sendMessage()"
 >
 
-<button class="primary" onclick="sendMessage()">
+<button
+  class="primary"
+  onclick="sendMessage()"
+>
 Send
 </button>
 
@@ -497,11 +665,15 @@ Send
 </section>
 
 
-<!-- OWNER -->
+<!-- OWNER / LISTENER -->
 
-<section id="owner" class="owner hide">
+<section
+  id="owner"
+  class="owner hide"
+>
 
 <h2>Listener Dashboard</h2>
+
 
 <div id="ownerLogin">
 
@@ -510,51 +682,85 @@ Enter your listener access key.
 </p>
 
 <input
-id="ownerKey"
-type="password"
-placeholder="Owner key"
-style="padding:12px;width:250px;border:1px solid #ddd;border-radius:10px"
+  id="ownerKey"
+  type="password"
+  placeholder="Listener key"
+  style="
+    padding:12px;
+    width:250px;
+    border:1px solid #ddd;
+    border-radius:10px;
+  "
 >
 
-<button class="primary" onclick="ownerLogin()">
+<button
+  class="primary"
+  onclick="ownerLogin()"
+>
 Open Dashboard
 </button>
 
 </div>
 
 
-<div id="ownerDashboard" class="hide">
+<div
+  id="ownerDashboard"
+  class="hide"
+>
 
-<h3>People waiting for chat</h3>
+<h3>
+People waiting for chat
+</h3>
 
-<div id="waitingList"></div>
+<div id="waitingList">
+</div>
 
 
-<div id="ownerChat" class="chat hide">
+<!-- OWNER CHAT -->
+
+<div
+  id="ownerChat"
+  class="chat hide"
+>
 
 <div class="chat-header">
 
-<b>Private customer chat</b>
+<div>
+
+<b id="ownerChatTitle">
+Private customer chat
+</b>
+
+<br>
+
+<small id="ownerChatTopic">
+</small>
 
 </div>
+
+</div>
+
 
 <div
-id="ownerMessages"
-class="messages">
+  id="ownerMessages"
+  class="messages"
+>
 </div>
+
 
 <div class="composer">
 
 <input
-id="ownerInput"
-placeholder="Reply..."
-maxlength="2000"
-onkeydown="if(event.key==='Enter')ownerSend()"
+  id="ownerInput"
+  placeholder="Reply..."
+  maxlength="2000"
+  onkeydown="if(event.key==='Enter')ownerSend()"
 >
 
 <button
-class="primary"
-onclick="ownerSend()">
+  class="primary"
+  onclick="ownerSend()"
+>
 Send
 </button>
 
@@ -571,535 +777,1181 @@ Send
 </div>
 
 
-<script src="/socket.io/socket.io.js"></script>
-
 <script>
 
-let socket=null;
+/* VARIABLES */
 
-let selectedTopic=null;
+let socket = null;
 
-let accessExpires=null;
+let selectedTopic = null;
 
-let ownerRoom=null;
+let accessExpires = null;
+
+let ownerRooms = new Map();
+
+let activeOwnerRoom = null;
 
 
 /* API */
 
-async function api(url,options={}){
+async function api(url, options = {}){
 
-  const response=await fetch(url,{
-    headers:{
-      'Content-Type':'application/json'
-    },
-    ...options
-  });
+  const response = await fetch(
+    url,
+    {
+      headers:{
+        "Content-Type":"application/json"
+      },
+      ...options
+    }
+  );
 
-  const data=await response.json();
+  const data = await response.json();
 
   if(!response.ok){
-    throw new Error(data.error || 'Something went wrong');
+
+    throw new Error(
+      data.error ||
+      "Something went wrong"
+    );
+
   }
 
   return data;
+
 }
 
 
 /* TOPIC */
 
-async function chooseTopic(topic,button){
+async function chooseTopic(topic, button){
 
-  selectedTopic=topic;
-
-  document
-    .querySelectorAll('.topic')
-    .forEach(x=>x.classList.remove('active'));
-
-  button.classList.add('active');
+  selectedTopic = topic;
 
   document
-    .getElementById('home')
-    .classList.add('hide');
+    .querySelectorAll(".topic")
+    .forEach(x =>
+      x.classList.remove("active")
+    );
+
+  button.classList.add("active");
+
 
   document
-    .getElementById('chat')
-    .classList.add('hide');
+    .getElementById("home")
+    .classList.add("hide");
 
   document
-    .getElementById('payment')
-    .classList.remove('hide');
+    .getElementById("chat")
+    .classList.add("hide");
 
   document
-    .getElementById('selectedTopic')
-    .textContent=topic;
+    .getElementById("owner")
+    .classList.add("hide");
+
+  document
+    .getElementById("payment")
+    .classList.remove("hide");
+
+
+  document
+    .getElementById("selectedTopic")
+    .textContent =
+      topic + " — Private Chat";
+
 
   try{
 
-    await api('/api/topic',{
-      method:'POST',
-      body:JSON.stringify({topic})
-    });
+    await api(
+      "/api/topic",
+      {
+        method:"POST",
+        body:JSON.stringify({
+          topic
+        })
+      }
+    );
 
-  }catch(e){
+  }catch(error){
 
-    alert(e.message);
+    alert(error.message);
 
   }
 
 }
 
 
-/* PAYMENT */
+/* PAYMENT / UNLOCK */
 
 async function payAndStart(){
 
   try{
 
-    const data=await api('/api/unlock',{
-      method:'POST'
-    });
+    const data =
+      await api(
+        "/api/unlock",
+        {
+          method:"POST"
+        }
+      );
 
-    accessExpires=data.expiresAt;
+    accessExpires =
+      data.expiresAt;
 
-    document
-      .getElementById('payment')
-      .classList.add('hide');
-
-    document
-      .getElementById('chat')
-      .classList.remove('hide');
 
     document
-      .getElementById('accessBadge')
-      .classList.remove('hide');
+      .getElementById("payment")
+      .classList.add("hide");
+
 
     document
-      .getElementById('chatTitle')
-      .textContent=
-      selectedTopic+
-      ' — Private Chat';
+      .getElementById("chat")
+      .classList.remove("hide");
+
+
+    document
+      .getElementById("accessBadge")
+      .classList.remove("hide");
+
+
+    document
+      .getElementById("chatTitle")
+      .textContent =
+        selectedTopic +
+        " — Private Chat";
+
+
+    /*
+      Clear old messages
+      when starting a new customer session.
+    */
+
+    document
+      .getElementById("messages")
+      .innerHTML = `
+
+        <div
+          class="waiting"
+          id="waitingMessage"
+        >
+
+          <h3>
+            Your private chat is ready.
+          </h3>
+
+          <p>
+            You are now waiting for the listener to join.
+          </p>
+
+          <p>
+            Your conversation will be visible only to you
+            and the listener.
+          </p>
+
+        </div>
+
+      `;
+
 
     connectVisitor();
 
     startTimer();
 
-  }catch(e){
+  }catch(error){
 
-    alert(e.message);
+    alert(error.message);
 
   }
 
 }
 
 
-/* VISITOR SOCKET */
+/* CUSTOMER SOCKET */
 
 function connectVisitor(){
 
   if(socket){
+
     socket.disconnect();
+
   }
 
-  socket=io();
+
+  socket = io();
 
 
-  socket.on('waiting',()=>{
+  /*
+    Waiting for listener
+  */
 
-    document
-      .getElementById('waitingMessage')
-      .innerHTML=`
+  socket.on(
+    "waiting",
+    () => {
 
-        <h3>Your private chat is ready.</h3>
+      const waiting =
+        document.getElementById(
+          "waitingMessage"
+        );
 
-        <p>
-        You are waiting for the listener to join.
-        </p>
+      if(waiting){
 
-        <p>
-        This conversation is private.
-        </p>
+        waiting.innerHTML = `
 
-      `;
+          <h3>
+            Your private chat is ready.
+          </h3>
 
-  });
+          <p>
+            You are waiting for the listener to join.
+          </p>
 
+          <p>
+            This conversation is private.
+          </p>
 
-  socket.on('paired',data=>{
+        `;
 
-    document
-      .getElementById('waitingMessage')
-      ?.remove();
+      }
 
-    addSystemMessage(
-      'You are now connected with the listener.'
-    );
-
-  });
-
-
-  socket.on('message',message=>{
-
-    addMessage(
-      message.from,
-      message.text
-    );
-
-  });
+    }
+  );
 
 
-  socket.on('history',messages=>{
+  /*
+    Listener accepted customer
+  */
 
-    messages.forEach(message=>{
+  socket.on(
+    "paired",
+    data => {
+
+      const waiting =
+        document.getElementById(
+          "waitingMessage"
+        );
+
+      if(waiting){
+
+        waiting.remove();
+
+      }
+
+      addSystemMessage(
+        "You are now connected with the listener."
+      );
+
+    }
+  );
+
+
+  /*
+    Messages
+  */
+
+  socket.on(
+    "message",
+    message => {
 
       addMessage(
         message.from,
         message.text
       );
 
-    });
+    }
+  );
 
-  });
+
+  /*
+    Previous messages
+  */
+
+  socket.on(
+    "history",
+    messages => {
+
+      messages.forEach(
+        message => {
+
+          addMessage(
+            message.from,
+            message.text
+          );
+
+        }
+      );
+
+    }
+  );
 
 
-  socket.on('ended',()=>{
+  /*
+    Conversation ended
+  */
 
-    addSystemMessage(
-      'This conversation has ended.'
+  socket.on(
+    "ended",
+    message => {
+
+      addSystemMessage(
+        message ||
+        "This conversation has ended."
+      );
+
+    }
+  );
+
+
+  /*
+    Errors
+  */
+
+  socket.on(
+    "errorMessage",
+    message => {
+
+      alert(message);
+
+    }
+  );
+
+
+  /*
+    Start waiting
+  */
+
+  socket.emit(
+    "visitorJoin"
+  );
+
+}
+
+
+/* ADD CUSTOMER MESSAGE */
+
+function addMessage(from, text){
+
+  const box =
+    document.getElementById(
+      "messages"
     );
 
-  });
+  const row =
+    document.createElement("div");
+
+  row.className =
+    "message " +
+    (from === "visitor"
+      ? "me"
+      : "");
 
 
-  socket.on('errorMessage',message=>{
+  const bubble =
+    document.createElement("div");
 
-    alert(message);
+  bubble.className =
+    "bubble";
 
-  });
-
-
-  socket.emit('visitorJoin');
-
-}
+  bubble.textContent =
+    text;
 
 
-/* MESSAGES */
+  row.appendChild(
+    bubble
+  );
 
-function addMessage(from,text){
+  box.appendChild(
+    row
+  );
 
-  const box=
-    document.getElementById('messages');
-
-  const row=
-    document.createElement('div');
-
-  row.className=
-    'message '+
-    (from==='visitor'?'me':'');
-
-  const bubble=
-    document.createElement('div');
-
-  bubble.className='bubble';
-
-  bubble.textContent=text;
-
-  row.appendChild(bubble);
-
-  box.appendChild(row);
-
-  box.scrollTop=box.scrollHeight;
+  box.scrollTop =
+    box.scrollHeight;
 
 }
 
+
+/* SYSTEM MESSAGE */
 
 function addSystemMessage(text){
 
-  const box=
-    document.getElementById('messages');
+  const box =
+    document.getElementById(
+      "messages"
+    );
 
-  const div=
-    document.createElement('div');
+  const div =
+    document.createElement("div");
 
-  div.style.textAlign='center';
+  div.style.textAlign =
+    "center";
 
-  div.style.color='#777';
+  div.style.color =
+    "#777";
 
-  div.style.padding='10px';
+  div.style.padding =
+    "10px";
 
-  div.textContent=text;
+  div.textContent =
+    text;
 
-  box.appendChild(div);
+  box.appendChild(
+    div
+  );
+
+  box.scrollTop =
+    box.scrollHeight;
 
 }
 
+
+/* CUSTOMER SEND */
 
 function sendMessage(){
 
-  const input=
-    document.getElementById('messageInput');
+  const input =
+    document.getElementById(
+      "messageInput"
+    );
 
-  const text=
+  const text =
     input.value.trim();
 
-  if(!text || !socket) return;
 
-  socket.emit('message',text);
-
-  input.value='';
-
-}
-
-
-/* TIMER */
-
-function startTimer(){
-
-  setInterval(()=>{
-
-    if(!accessExpires) return;
-
-    const remaining=
-      new Date(accessExpires).getTime()-
-      Date.now();
-
-    if(remaining<=0){
-
-      document
-        .getElementById('timer')
-        .textContent=
-        '24-hour access expired';
-
-      document
-        .getElementById('accessBadge')
-        .textContent=
-        'Access expired';
-
-      return;
-
-    }
-
-    const seconds=
-      Math.floor(remaining/1000);
-
-    const h=
-      Math.floor(seconds/3600);
-
-    const m=
-      Math.floor((seconds%3600)/60);
-
-    const s=
-      seconds%60;
-
-    document
-      .getElementById('timer')
-      .textContent=
-      `Access remaining: ${h}h ${m}m ${s}s`;
-
-  },1000);
-
-}
-
-
-/* CLOSE */
-
-function closeChat(){
-
-  if(socket){
-    socket.disconnect();
-  }
-
-  document
-    .getElementById('chat')
-    .classList.add('hide');
-
-  document
-    .getElementById('home')
-    .classList.remove('hide');
-
-}
-
-
-/* OWNER */
-
-function showOwner(){
-
-  document
-    .getElementById('home')
-    .classList.add('hide');
-
-  document
-    .getElementById('payment')
-    .classList.add('hide');
-
-  document
-    .getElementById('chat')
-    .classList.add('hide');
-
-  document
-    .getElementById('owner')
-    .classList.remove('hide');
-
-}
-
-
-function ownerLogin(){
-
-  const key=
-    document
-      .getElementById('ownerKey')
-      .value;
-
-  socket=io();
-
-  socket.on('ownerAuthResult',result=>{
-
-    if(!result.ok){
-
-      alert('Wrong owner key.');
-
-      return;
-
-    }
-
-    document
-      .getElementById('ownerLogin')
-      .classList.add('hide');
-
-    document
-      .getElementById('ownerDashboard')
-      .classList.remove('hide');
-
-  });
-
-
-  socket.on('waitingList',list=>{
-
-    renderWaiting(list);
-
-  });
-
-
-  socket.on('newChat',data=>{
-
-    ownerRoom=data.room;
-
-    document
-      .getElementById('ownerChat')
-      .classList.remove('hide');
-
-    document
-      .getElementById('ownerMessages')
-      .innerHTML='';
-
-  });
-
-
-  socket.on('message',message=>{
-
-    const box=
-      document.getElementById('ownerMessages');
-
-    const row=
-      document.createElement('div');
-
-    row.className=
-      'message '+
-      (message.from==='owner'?'me':'');
-
-    const bubble=
-      document.createElement('div');
-
-    bubble.className='bubble';
-
-    bubble.textContent=message.text;
-
-    row.appendChild(bubble);
-
-    box.appendChild(row);
-
-    box.scrollTop=box.scrollHeight;
-
-  });
-
-
-  socket.emit('ownerAuth',key);
-
-}
-
-
-function renderWaiting(list){
-
-  const box=
-    document.getElementById('waitingList');
-
-  box.innerHTML='';
-
-  if(!list.length){
-
-    box.innerHTML=
-      '<p>No customers are waiting right now.</p>';
+  if(
+    !text ||
+    !socket
+  ){
 
     return;
 
   }
 
 
-  list.forEach(id=>{
+  socket.emit(
+    "message",
+    text
+  );
 
-    const card=
-      document.createElement('div');
 
-    card.className='owner-card';
-
-    card.innerHTML=
-      '<b>New customer waiting</b><br><br>'+
-      '<span>Private conversation</span><br><br>';
-
-    const button=
-      document.createElement('button');
-
-    button.className='primary';
-
-    button.textContent=
-      'Accept Chat';
-
-    button.onclick=()=>{
-
-      socket.emit(
-        'ownerAccept',
-        id
-      );
-
-    };
-
-    card.appendChild(button);
-
-    box.appendChild(card);
-
-  });
+  input.value = "";
 
 }
 
 
-function ownerSend(){
+/* TIMER */
 
-  const input=
-    document.getElementById('ownerInput');
+let timerStarted = false;
 
-  const text=
-    input.value.trim();
+function startTimer(){
 
-  if(!text || !ownerRoom) return;
+  if(timerStarted){
 
-  socket.emit(
-    'ownerMessage',
-    {
-      room:ownerRoom,
-      text
+    return;
+
+  }
+
+  timerStarted = true;
+
+
+  setInterval(
+    () => {
+
+      if(!accessExpires){
+
+        return;
+
+      }
+
+
+      const remaining =
+        new Date(
+          accessExpires
+        ).getTime() -
+        Date.now();
+
+
+      if(remaining <= 0){
+
+        document
+          .getElementById(
+            "timer"
+          )
+          .textContent =
+            "24-hour access expired";
+
+
+        document
+          .getElementById(
+            "accessBadge"
+          )
+          .textContent =
+            "Access expired";
+
+
+        return;
+
+      }
+
+
+      const seconds =
+        Math.floor(
+          remaining / 1000
+        );
+
+
+      const hours =
+        Math.floor(
+          seconds / 3600
+        );
+
+
+      const minutes =
+        Math.floor(
+          (seconds % 3600) / 60
+        );
+
+
+      const secs =
+        seconds % 60;
+
+
+      document
+        .getElementById(
+          "timer"
+        )
+        .textContent =
+          `${hours}h ${minutes}m ${secs}s remaining`;
+
+    },
+    1000
+  );
+
+}
+
+
+/* CLOSE CUSTOMER CHAT */
+
+function closeChat(){
+
+  if(socket){
+
+    socket.disconnect();
+
+    socket = null;
+
+  }
+
+
+  document
+    .getElementById("chat")
+    .classList.add("hide");
+
+
+  document
+    .getElementById("payment")
+    .classList.add("hide");
+
+
+  document
+    .getElementById("home")
+    .classList.remove("hide");
+
+}
+
+
+/* OWNER PAGE */
+
+function showOwner(){
+
+  document
+    .getElementById("home")
+    .classList.add("hide");
+
+  document
+    .getElementById("payment")
+    .classList.add("hide");
+
+  document
+    .getElementById("chat")
+    .classList.add("hide");
+
+  document
+    .getElementById("owner")
+    .classList.remove("hide");
+
+}
+
+
+/* OWNER LOGIN */
+
+function ownerLogin(){
+
+  const key =
+    document
+      .getElementById(
+        "ownerKey"
+      )
+      .value.trim();
+
+
+  if(!key){
+
+    alert(
+      "Please enter your listener key."
+    );
+
+    return;
+
+  }
+
+
+  if(socket){
+
+    socket.disconnect();
+
+  }
+
+
+  socket = io();
+
+
+  /*
+    Authentication result
+  */
+
+  socket.on(
+    "ownerAuthResult",
+    result => {
+
+      if(!result.ok){
+
+        alert(
+          result.error ||
+          "Wrong listener key."
+        );
+
+        return;
+
+      }
+
+
+      document
+        .getElementById(
+          "ownerLogin"
+        )
+        .classList.add("hide");
+
+
+      document
+        .getElementById(
+          "ownerDashboard"
+        )
+        .classList.remove("hide");
+
     }
   );
 
-  input.value='';
+
+  /*
+    Waiting customers
+  */
+
+  socket.on(
+    "waitingList",
+    list => {
+
+      renderWaiting(list);
+
+    }
+  );
+
+
+  /*
+    Owner gets a new private room
+  */
+
+  socket.on(
+    "newChat",
+    data => {
+
+      activeOwnerRoom =
+        data.room;
+
+
+      ownerRooms.set(
+        data.room,
+        {
+          visitorId:
+            data.visitorId,
+
+          topic:
+            data.topic
+        }
+      );
+
+
+      document
+        .getElementById(
+          "ownerChat"
+        )
+        .classList.remove("hide");
+
+
+      document
+        .getElementById(
+          "ownerChatTitle"
+        )
+        .textContent =
+          "Private customer chat";
+
+
+      document
+        .getElementById(
+          "ownerChatTopic"
+        )
+        .textContent =
+          data.topic ||
+          "Private conversation";
+
+
+      document
+        .getElementById(
+          "ownerMessages"
+        )
+        .innerHTML = "";
+
+    }
+  );
+
+
+  /*
+    Owner receives message
+  */
+
+  socket.on(
+    "message",
+    message => {
+
+      const box =
+        document.getElementById(
+          "ownerMessages"
+        );
+
+
+      const row =
+        document.createElement(
+          "div"
+        );
+
+
+      row.className =
+        "message " +
+        (
+          message.from === "owner"
+            ? "me"
+            : ""
+        );
+
+
+      const bubble =
+        document.createElement(
+          "div"
+        );
+
+
+      bubble.className =
+        "bubble";
+
+
+      bubble.textContent =
+        message.text;
+
+
+      row.appendChild(
+        bubble
+      );
+
+
+      box.appendChild(
+        row
+      );
+
+
+      box.scrollTop =
+        box.scrollHeight;
+
+    }
+  );
+
+
+  /*
+    Previous conversation history
+  */
+
+  socket.on(
+    "history",
+    messages => {
+
+      const box =
+        document.getElementById(
+          "ownerMessages"
+        );
+
+
+      box.innerHTML = "";
+
+
+      messages.forEach(
+        message => {
+
+          const row =
+            document.createElement(
+              "div"
+            );
+
+
+          row.className =
+            "message " +
+            (
+              message.from === "owner"
+                ? "me"
+                : ""
+            );
+
+
+          const bubble =
+            document.createElement(
+              "div"
+            );
+
+
+          bubble.className =
+            "bubble";
+
+
+          bubble.textContent =
+            message.text;
+
+
+          row.appendChild(
+            bubble
+          );
+
+
+          box.appendChild(
+            row
+          );
+
+        }
+      );
+
+
+      box.scrollTop =
+        box.scrollHeight;
+
+    }
+  );
+
+
+  /*
+    Customer disconnected
+  */
+
+  socket.on(
+    "ended",
+    message => {
+
+      const box =
+        document.getElementById(
+          "ownerMessages"
+        );
+
+
+      const div =
+        document.createElement(
+          "div"
+        );
+
+
+      div.style.textAlign =
+        "center";
+
+      div.style.color =
+        "#777";
+
+      div.style.padding =
+        "10px";
+
+      div.textContent =
+        message ||
+        "The conversation has ended.";
+
+
+      box.appendChild(
+        div
+      );
+
+    }
+  );
+
+
+  /*
+    Login
+  */
+
+  socket.emit(
+    "ownerAuth",
+    key
+  );
+
+}
+
+
+/* WAITING CUSTOMERS */
+
+function renderWaiting(list){
+
+  const box =
+    document.getElementById(
+      "waitingList"
+    );
+
+
+  box.innerHTML = "";
+
+
+  if(
+    !list ||
+    !list.length
+  ){
+
+    box.innerHTML =
+      "<p>No customers are waiting right now.</p>";
+
+    return;
+
+  }
+
+
+  list.forEach(
+    customer => {
+
+      const card =
+        document.createElement(
+          "div"
+        );
+
+
+      card.className =
+        "owner-card";
+
+
+      const title =
+        document.createElement(
+          "b"
+        );
+
+
+      title.textContent =
+        "New customer waiting";
+
+
+      const topic =
+        document.createElement(
+          "p"
+        );
+
+
+      topic.innerHTML =
+        "<b>Topic:</b> " +
+        escapeHtml(
+          customer.topic ||
+          "Other"
+        );
+
+
+      const time =
+        document.createElement(
+          "small"
+        );
+
+
+      time.textContent =
+        "Waiting since: " +
+        formatTime(
+          customer.waitingSince
+        );
+
+
+      const button =
+        document.createElement(
+          "button"
+        );
+
+
+      button.className =
+        "primary";
+
+
+      button.textContent =
+        "Accept Chat";
+
+
+      button.onclick =
+        () => {
+
+          socket.emit(
+            "ownerAccept",
+            customer.socketId ||
+            findSocketId(customer)
+          );
+
+        };
+
+
+      card.appendChild(
+        title
+      );
+
+      card.appendChild(
+        topic
+      );
+
+      card.appendChild(
+        time
+      );
+
+      card.appendChild(
+        document.createElement(
+          "br"
+        )
+      );
+
+      card.appendChild(
+        document.createElement(
+          "br"
+        )
+      );
+
+      card.appendChild(
+        button
+      );
+
+
+      box.appendChild(
+        card
+      );
+
+    }
+  );
+
+}
+
+
+/*
+  The server currently sends visitorId,
+  topic and waitingSince.
+
+  We need a way to identify the waiting
+  customer. The server should ideally send
+  socketId as well.
+
+  This function is kept as a fallback.
+*/
+
+function findSocketId(customer){
+
+  return customer.socketId ||
+    customer.visitorId;
+
+}
+
+
+/* OWNER SEND */
+
+function ownerSend(){
+
+  const input =
+    document.getElementById(
+      "ownerInput"
+    );
+
+
+  const text =
+    input.value.trim();
+
+
+  if(
+    !text ||
+    !socket ||
+    !activeOwnerRoom
+  ){
+
+    return;
+
+  }
+
+
+  socket.emit(
+    "ownerMessage",
+    {
+      room:
+        activeOwnerRoom,
+
+      text:
+        text
+    }
+  );
+
+
+  input.value = "";
+
+}
+
+
+/* ESCAPE HTML */
+
+function escapeHtml(value){
+
+  const div =
+    document.createElement(
+      "div"
+    );
+
+  div.textContent =
+    value;
+
+  return div.innerHTML;
+
+}
+
+
+/* TIME */
+
+function formatTime(value){
+
+  if(!value){
+
+    return "";
+
+  }
+
+  try{
+
+    return new Date(
+      value
+    ).toLocaleTimeString(
+      [],
+      {
+        hour:"2-digit",
+        minute:"2-digit"
+      }
+    );
+
+  }catch{
+
+    return "";
+
+  }
 
 }
 
