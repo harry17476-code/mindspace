@@ -1,132 +1,49 @@
-const path = require('path');
-const http = require('http');
-const crypto = require('crypto');
-
-const express = require('express');
-const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
-const session = require('express-session');
-const pgSession = require('connect-pg-simple')(session);
-const { Pool } = require('pg');
-const { Server } = require('socket.io');
+const express = require("express");
+const http = require("http");
+const path = require("path");
+const crypto = require("crypto");
+const session = require("express-session");
+const rateLimit = require("express-rate-limit");
+const helmet = require("helmet");
+const { Server } = require("socket.io");
+const { Pool } = require("pg");
 
 const app = express();
 const server = http.createServer(app);
+const io = new Server(server);
 
-const io = new Server(server, {
-  connectionStateRecovery: {}
-});
+const PORT = process.env.PORT || 10000;
+const SESSION_SECRET =
+  process.env.SESSION_SECRET || crypto.randomBytes(32).toString("hex");
 
-const PORT = Number(process.env.PORT || 3000);
+const OWNER_KEY = process.env.MINDSPACE_OWNER_KEY || "";
 
-const DATABASE_URL = process.env.DATABASE_URL;
-const OWNER_KEY = process.env.MINDSPACE_OWNER_KEY;
+const DATABASE_URL = process.env.DATABASE_URL || "";
+const hasDatabase = Boolean(DATABASE_URL);
 
-/*
-  DEMO_PAYMENT=true means the ₹11 button does not actually
-  charge money. It only activates 24-hour access for testing.
+/* DATABASE */
 
-  Change this only after a real payment gateway has been
-  integrated and payment is verified server-side.
-*/
-const DEMO_PAYMENT = process.env.DEMO_PAYMENT !== 'false';
+let pool = null;
 
-const ACCESS_HOURS = 24;
-
-if (!DATABASE_URL) {
-  console.warn(
-    'DATABASE_URL is not set. Persistent database storage is disabled.'
-  );
-}
-
-if (!OWNER_KEY) {
-  console.warn(
-    'MINDSPACE_OWNER_KEY is not set. Listener dashboard will be unavailable.'
-  );
-}
-
-const pool = DATABASE_URL
-  ? new Pool({
-      connectionString: DATABASE_URL,
-      ssl: { rejectUnauthorized: false }
-    })
-  : null;
-
-const db = {
-
-  async query(text, params = []) {
-
-    if (!pool) {
-      throw new Error('Database not configured');
+if (hasDatabase) {
+  pool = new Pool({
+    connectionString: DATABASE_URL,
+    ssl: {
+      rejectUnauthorized: false
     }
+  });
 
-    return pool.query(text, params);
-  },
+  pool.on("error", err => {
+    console.error("PostgreSQL error:", err.message);
+  });
+}
 
-  async init() {
+/* MEMORY FALLBACK */
 
-    if (!pool) return;
+const memoryVisitors = new Map();
+const memoryMessages = new Map();
 
-    await pool.query(`
-
-      CREATE TABLE IF NOT EXISTS users (
-        id TEXT PRIMARY KEY,
-        username TEXT UNIQUE,
-        password_hash TEXT,
-        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-      );
-
-      CREATE TABLE IF NOT EXISTS access_passes (
-        id TEXT PRIMARY KEY,
-        user_id TEXT,
-        visitor_id TEXT,
-        started_at TIMESTAMPTZ NOT NULL,
-        expires_at TIMESTAMPTZ NOT NULL,
-        payment_ref TEXT,
-        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-      );
-
-      ALTER TABLE access_passes
-        ALTER COLUMN user_id DROP NOT NULL;
-
-      ALTER TABLE access_passes
-        ADD COLUMN IF NOT EXISTS visitor_id TEXT;
-
-      CREATE INDEX IF NOT EXISTS
-        access_passes_visitor_idx
-        ON access_passes(visitor_id, expires_at);
-
-      CREATE TABLE IF NOT EXISTS messages (
-        id BIGSERIAL PRIMARY KEY,
-        room_id TEXT NOT NULL,
-        sender_role TEXT NOT NULL,
-        user_id TEXT,
-        body TEXT NOT NULL,
-        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-      );
-
-      CREATE INDEX IF NOT EXISTS
-        messages_room_idx
-        ON messages(room_id, id);
-
-      CREATE TABLE IF NOT EXISTS reviews (
-        id BIGSERIAL PRIMARY KEY,
-        user_id TEXT,
-        visitor_id TEXT,
-        rating INTEGER NOT NULL
-          CHECK (rating BETWEEN 1 AND 5),
-        text TEXT NOT NULL,
-        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-      );
-
-      ALTER TABLE reviews
-        ADD COLUMN IF NOT EXISTS visitor_id TEXT;
-
-    `);
-  }
-};
-
-app.set('trust proxy', 1);
+/* MIDDLEWARE */
 
 app.use(
   helmet({
@@ -134,953 +51,870 @@ app.use(
   })
 );
 
-app.use(
-  express.json({
-    limit: '32kb'
-  })
-);
+app.use(express.json({ limit: "100kb" }));
+app.use(express.urlencoded({ extended: false }));
 
-app.use(
-  rateLimit({
-    windowMs: 15 * 60 * 1000,
-    limit: 300,
-    standardHeaders: true,
-    legacyHeaders: false
-  })
-);
-
-const sessionMiddleware = session({
-
-  store: pool
-    ? new pgSession({
-        pool,
-        tableName: 'user_sessions',
-        createTableIfMissing: true
-      })
-    : undefined,
-
-  secret:
-    process.env.SESSION_SECRET ||
-    'change-this-session-secret-before-public-use',
-
+const sessionOptions = {
+  secret: SESSION_SECRET,
   resave: false,
-
   saveUninitialized: true,
-
   cookie: {
     httpOnly: true,
-    sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
-    maxAge: 30 * 24 * 60 * 60 * 1000
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    maxAge: 1000 * 60 * 60 * 24 * 30
   }
+};
+
+if (pool) {
+  const PgSession = require("connect-pg-simple")(session);
+
+  sessionOptions.store = new PgSession({
+    pool,
+    createTableIfMissing: true
+  });
+}
+
+app.use(session(sessionOptions));
+
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false
 });
 
-app.use(sessionMiddleware);
+app.use("/api/", apiLimiter);
 
-app.use(
-  express.static(
-    path.join(__dirname, 'public')
-  )
-);
+app.use(express.static(path.join(__dirname, "public")));
 
-function uid() {
-  return crypto.randomUUID();
+/* DATABASE SETUP */
+
+async function setupDatabase() {
+  if (!pool) return;
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS visitors (
+      visitor_id TEXT PRIMARY KEY,
+      topic TEXT,
+      access_expires TIMESTAMPTZ,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS messages (
+      id BIGSERIAL PRIMARY KEY,
+      room_id TEXT NOT NULL,
+      visitor_id TEXT NOT NULL,
+      sender TEXT NOT NULL,
+      message TEXT NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+  `);
+
+  console.log("PostgreSQL database ready.");
+}
+
+/* HELPERS */
+
+function createId(prefix = "") {
+  return (
+    prefix +
+    crypto.randomBytes(12).toString("hex")
+  );
 }
 
 function ensureVisitor(req) {
-
   if (!req.session.visitorId) {
-    req.session.visitorId = uid();
+    req.session.visitorId = createId("visitor_");
   }
 
   return req.session.visitorId;
 }
 
-async function getAccess(visitorId) {
+async function getVisitor(visitorId) {
+  if (pool) {
+    const result = await pool.query(
+      `SELECT * FROM visitors WHERE visitor_id = $1`,
+      [visitorId]
+    );
 
-  if (!pool || !visitorId) {
-    return null;
+    return result.rows[0] || null;
   }
 
-  const result = await db.query(
-    `
-    SELECT expires_at
-    FROM access_passes
-    WHERE visitor_id=$1
-    ORDER BY expires_at DESC
-    LIMIT 1
-    `,
-    [visitorId]
-  );
-
-  return result.rows[0]?.expires_at || null;
+  return memoryVisitors.get(visitorId) || null;
 }
 
-async function visitorHasAccess(visitorId) {
-
-  const expires = await getAccess(visitorId);
-
-  return Boolean(
-    expires &&
-    new Date(expires) > new Date()
-  );
-}
-
-
-/* -----------------------------
-   Visitor
------------------------------- */
-
-app.get('/api/me', async (req, res) => {
-
-  try {
-
-    const visitorId = ensureVisitor(req);
-
-    let expiresAt = null;
-
-    if (pool) {
-      expiresAt = await getAccess(visitorId);
-    } else {
-      expiresAt =
-        req.session.accessExpiresAt || null;
-    }
-
-    const hasAccess =
-      Boolean(
-        expiresAt &&
-        new Date(expiresAt) > new Date()
-      );
-
-    if (expiresAt) {
-      req.session.accessExpiresAt = expiresAt;
-    }
-
-    res.json({
-
-      visitorId,
-
-      topic:
-        req.session.topic || null,
-
-      accessExpiresAt:
-        expiresAt,
-
-      hasAccess
-
-    });
-
-  } catch (e) {
-
-    console.error(e);
-
-    res.status(500).json({
-      error: 'Could not load MindSpace.'
-    });
-
-  }
-
-});
-
-
-app.post('/api/topic', (req, res) => {
-
-  const topics = [
-    'Relationship',
-    'Friends',
-    'Love',
-    'Family',
-    'Studies',
-    'Work',
-    'Stress',
-    'Other'
-  ];
-
-  const topic = String(
-    req.body?.topic || ''
-  ).trim();
-
-  if (!topics.includes(topic)) {
-
-    return res.status(400).json({
-      error: 'Invalid topic.'
-    });
-
-  }
-
-  ensureVisitor(req);
-
-  req.session.topic = topic;
-
-  res.json({
-    ok: true,
-    topic
-  });
-
-});
-
-
-/* -----------------------------
-   ₹11 / 24-hour access
------------------------------- */
-
-app.post('/api/unlock', async (req, res) => {
-
-  try {
-
-    const visitorId = ensureVisitor(req);
-
-    /*
-      DEMO PAYMENT
-
-      This does NOT charge ₹11.
-      It simply activates 24 hours for testing.
-
-      A real payment provider must be connected later.
-    */
-
-    if (!DEMO_PAYMENT) {
-
-      return res.status(501).json({
-        error:
-          'Real payment mode is not configured yet.'
-      });
-
-    }
-
-    const started = new Date();
-
-    const expires = new Date(
-      started.getTime() +
-      ACCESS_HOURS * 60 * 60 * 1000
-    );
-
-    if (pool) {
-
-      await db.query(
-        `
-        INSERT INTO access_passes
-        (
-          id,
-          user_id,
-          visitor_id,
-          started_at,
-          expires_at,
-          payment_ref
-        )
-        VALUES($1,$2,$3,$4,$5,$6)
-        `,
-        [
-          uid(),
-          null,
-          visitorId,
-          started,
-          expires,
-          'DEMO-RS11'
-        ]
-      );
-
-    }
-
-    req.session.accessExpiresAt =
-      expires.toISOString();
-
-    await new Promise(resolve =>
-      req.session.save(resolve)
-    );
-
-    res.json({
-
-      ok: true,
-
-      demo: true,
-
-      expiresAt:
-        expires.toISOString()
-
-    });
-
-  } catch (e) {
-
-    console.error(e);
-
-    res.status(500).json({
-      error: 'Could not activate access.'
-    });
-
-  }
-
-});
-
-
-/* -----------------------------
-   Reviews
------------------------------- */
-
-app.get('/api/reviews', async (req, res) => {
-
-  try {
-
-    if (!pool) {
-      return res.json([]);
-    }
-
-    const result = await db.query(
+async function saveVisitor(visitorId, data) {
+  if (pool) {
+    await pool.query(
       `
-      SELECT
-        rating,
-        text,
-        created_at
-      FROM reviews
-      ORDER BY created_at DESC
-      LIMIT 30
-      `
-    );
-
-    res.json(result.rows);
-
-  } catch (e) {
-
-    console.error(e);
-
-    res.status(500).json({
-      error: 'Could not load reviews.'
-    });
-
-  }
-
-});
-
-
-app.post('/api/reviews', async (req, res) => {
-
-  try {
-
-    const visitorId =
-      ensureVisitor(req);
-
-    const rating =
-      Number(req.body?.rating);
-
-    const text =
-      String(
-        req.body?.text || ''
-      ).trim();
-
-    if (
-      !Number.isInteger(rating) ||
-      rating < 1 ||
-      rating > 5 ||
-      text.length < 3 ||
-      text.length > 500
-    ) {
-
-      return res.status(400).json({
-        error:
-          'Rating must be 1–5 and review 3–500 characters.'
-      });
-
-    }
-
-    if (!pool) {
-
-      return res.status(503).json({
-        error:
-          'Database is not connected yet.'
-      });
-
-    }
-
-    await db.query(
-      `
-      INSERT INTO reviews
-      (
-        visitor_id,
-        rating,
-        text
-      )
-      VALUES($1,$2,$3)
+      INSERT INTO visitors
+        (visitor_id, topic, access_expires)
+      VALUES
+        ($1, $2, $3)
+      ON CONFLICT (visitor_id)
+      DO UPDATE SET
+        topic = EXCLUDED.topic,
+        access_expires = EXCLUDED.access_expires
       `,
       [
         visitorId,
-        rating,
-        text
+        data.topic || null,
+        data.accessExpires || null
       ]
     );
 
+    return;
+  }
+
+  memoryVisitors.set(visitorId, {
+    visitorId,
+    topic: data.topic || null,
+    accessExpires: data.accessExpires || null
+  });
+}
+
+async function saveMessage(roomId, visitorId, sender, message) {
+  if (pool) {
+    await pool.query(
+      `
+      INSERT INTO messages
+        (room_id, visitor_id, sender, message)
+      VALUES
+        ($1, $2, $3, $4)
+      `,
+      [roomId, visitorId, sender, message]
+    );
+
+    return;
+  }
+
+  if (!memoryMessages.has(roomId)) {
+    memoryMessages.set(roomId, []);
+  }
+
+  memoryMessages.get(roomId).push({
+    from: sender,
+    text: message,
+    createdAt: new Date().toISOString()
+  });
+}
+
+async function getMessages(roomId) {
+  if (pool) {
+    const result = await pool.query(
+      `
+      SELECT sender, message, created_at
+      FROM messages
+      WHERE room_id = $1
+      ORDER BY id ASC
+      `,
+      [roomId]
+    );
+
+    return result.rows.map(row => ({
+      from: row.sender,
+      text: row.message,
+      createdAt: row.created_at
+    }));
+  }
+
+  return memoryMessages.get(roomId) || [];
+}
+
+function hasValidAccess(visitor) {
+  if (!visitor || !visitor.accessExpires) {
+    return false;
+  }
+
+  return new Date(visitor.accessExpires).getTime() > Date.now();
+}
+
+/* API */
+
+app.get("/api/me", async (req, res) => {
+  try {
+    const visitorId = ensureVisitor(req);
+    const visitor = await getVisitor(visitorId);
+
+    if (!visitor) {
+      return res.json({
+        visitorId,
+        access: false
+      });
+    }
+
     res.json({
+      visitorId,
+      access: hasValidAccess(visitor),
+      topic: visitor.topic || null,
+      expiresAt: visitor.accessExpires || null
+    });
+  } catch (err) {
+    console.error(err);
+
+    res.status(500).json({
+      error: "Server error"
+    });
+  }
+});
+
+/* TOPIC */
+
+app.post("/api/topic", async (req, res) => {
+  try {
+    const visitorId = ensureVisitor(req);
+    const topic = String(req.body.topic || "").trim();
+
+    if (!topic || topic.length > 100) {
+      return res.status(400).json({
+        error: "Invalid topic."
+      });
+    }
+
+    await saveVisitor(visitorId, {
+      topic
+    });
+
+    req.session.topic = topic;
+
+    res.json({
+      ok: true,
+      topic
+    });
+  } catch (err) {
+    console.error(err);
+
+    res.status(500).json({
+      error: "Could not save topic."
+    });
+  }
+});
+
+/* DEMO PAYMENT / UNLOCK */
+
+app.post("/api/unlock", async (req, res) => {
+  try {
+    const visitorId = ensureVisitor(req);
+
+    const existing = await getVisitor(visitorId);
+
+    const topic =
+      existing?.topic ||
+      req.session.topic ||
+      null;
+
+    /*
+      TESTING MODE
+
+      This does NOT charge real money.
+
+      Later we will connect a real payment gateway.
+    */
+
+    const expiresAt = new Date(
+      Date.now() + 24 * 60 * 60 * 1000
+    );
+
+    await saveVisitor(visitorId, {
+      topic,
+      accessExpires: expiresAt.toISOString()
+    });
+
+    res.json({
+      ok: true,
+      visitorId,
+      expiresAt: expiresAt.toISOString(),
+      testing: true
+    });
+  } catch (err) {
+    console.error(err);
+
+    res.status(500).json({
+      error: "Could not unlock chat."
+    });
+  }
+});
+
+/* HEALTH */
+
+app.get("/health", (req, res) => {
+  res.json({
+    ok: true,
+    service: "MindSpace",
+    database: hasDatabase
+  });
+});
+
+/* SOCKET STATE */
+
+/*
+  IMPORTANT:
+
+  waiting = customers waiting for the listener.
+
+  rooms = private visitor <-> listener conversations.
+
+  A visitor is NEVER paired with another visitor.
+*/
+
+const waiting = new Map();
+
+/*
+  roomId -> {
+    visitorSocketId,
+    visitorId,
+    ownerSocketId
+  }
+*/
+
+const rooms = new Map();
+
+/*
+  socketId -> roomId
+*/
+
+const socketRooms = new Map();
+
+/*
+  Connected listener sockets.
+*/
+
+const owners = new Set();
+
+/* WAITING LIST */
+
+function waitingList() {
+  return Array.from(waiting.values()).map(item => ({
+    visitorId: item.visitorId,
+    topic: item.topic,
+    waitingSince: item.waitingSince
+  }));
+}
+
+function broadcastWaitingList() {
+  const list = waitingList();
+
+  for (const ownerSocketId of owners) {
+    const ownerSocket = io.sockets.sockets.get(ownerSocketId);
+
+    if (ownerSocket) {
+      ownerSocket.emit("waitingList", list);
+    }
+  }
+}
+
+/* SOCKET.IO */
+
+io.on("connection", socket => {
+  console.log("Socket connected:", socket.id);
+
+  /*
+    VISITOR JOIN
+
+    IMPORTANT:
+    We DO NOT search for another visitor here.
+
+    The visitor simply enters the waiting list.
+  */
+
+  socket.on("visitorJoin", async () => {
+    try {
+      const visitorId = socket.request.session?.visitorId;
+
+      if (!visitorId) {
+        socket.emit(
+          "errorMessage",
+          "Visitor session not found. Please refresh the page."
+        );
+
+        return;
+      }
+
+      const visitor = await getVisitor(visitorId);
+
+      if (!hasValidAccess(visitor)) {
+        socket.emit(
+          "errorMessage",
+          "Your 24-hour access has expired."
+        );
+
+        return;
+      }
+
+      const topic =
+        visitor.topic ||
+        socket.request.session?.topic ||
+        "Other";
+
+      /*
+        Remove an old waiting entry belonging to
+        the same visitor.
+      */
+
+      for (const [id, item] of waiting.entries()) {
+        if (item.visitorId === visitorId) {
+          waiting.delete(id);
+        }
+      }
+
+      waiting.set(socket.id, {
+        socketId: socket.id,
+        visitorId,
+        topic,
+        waitingSince: new Date().toISOString()
+      });
+
+      socket.data.role = "visitor";
+      socket.data.visitorId = visitorId;
+
+      socket.emit("waiting");
+
+      broadcastWaitingList();
+
+      console.log(
+        `Visitor ${visitorId} is waiting for listener.`
+      );
+    } catch (err) {
+      console.error("visitorJoin error:", err);
+
+      socket.emit(
+        "errorMessage",
+        "Could not start chat."
+      );
+    }
+  });
+
+  /* OWNER LOGIN */
+
+  socket.on("ownerAuth", key => {
+    if (!OWNER_KEY) {
+      socket.emit("ownerAuthResult", {
+        ok: false,
+        error: "Listener access is not configured."
+      });
+
+      return;
+    }
+
+    if (String(key) !== String(OWNER_KEY)) {
+      socket.emit("ownerAuthResult", {
+        ok: false
+      });
+
+      return;
+    }
+
+    socket.data.role = "owner";
+
+    owners.add(socket.id);
+
+    socket.emit("ownerAuthResult", {
       ok: true
     });
 
-  } catch (e) {
+    socket.emit("waitingList", waitingList());
 
-    console.error(e);
-
-    res.status(500).json({
-      error: 'Could not save review.'
-    });
-
-  }
-
-});
-
-
-/* -----------------------------
-   Listener dashboard
------------------------------- */
-
-app.post('/api/owner/login', (req, res) => {
-
-  if (
-    !OWNER_KEY ||
-    req.body?.key !== OWNER_KEY
-  ) {
-
-    return res.status(401).json({
-      error: 'Access denied.'
-    });
-
-  }
-
-  req.session.isOwner = true;
-
-  res.json({
-    ok: true
+    console.log("Listener connected:", socket.id);
   });
 
-});
+  /* OWNER ACCEPTS SPECIFIC CUSTOMER */
 
+  socket.on("ownerAccept", async visitorSocketId => {
+    try {
+      if (socket.data.role !== "owner") {
+        return;
+      }
 
-app.post('/api/owner/logout', (req, res) => {
+      const waitingCustomer =
+        waiting.get(visitorSocketId);
 
-  req.session.isOwner = false;
+      if (!waitingCustomer) {
+        socket.emit(
+          "errorMessage",
+          "That customer is no longer waiting."
+        );
 
-  res.json({
-    ok: true
-  });
+        broadcastWaitingList();
 
-});
+        return;
+      }
 
+      const visitorSocket =
+        io.sockets.sockets.get(visitorSocketId);
 
-/* -----------------------------
-   Socket.IO
------------------------------- */
+      if (!visitorSocket) {
+        waiting.delete(visitorSocketId);
 
-io.use((socket, next) => {
+        broadcastWaitingList();
 
-  sessionMiddleware(
-    socket.request,
-    {},
-    next
-  );
-
-});
-
-
-const waiting = new Map();
-const rooms = new Map();
-
-
-async function loadHistory(roomId) {
-
-  if (!pool) return [];
-
-  const result = await db.query(
-    `
-    SELECT
-      sender_role AS "from",
-      body AS text,
-      created_at AS "createdAt"
-    FROM messages
-    WHERE room_id=$1
-    ORDER BY id ASC
-    LIMIT 500
-    `,
-    [roomId]
-  );
-
-  return result.rows;
-}
-
-
-io.on('connection', socket => {
-
-
-  /* Visitor asks to start chat */
-
-  socket.on(
-    'visitorJoin',
-    async () => {
-
-      const req =
-        socket.request;
+        return;
+      }
 
       const visitorId =
-        req.session?.visitorId;
-
-      if (!visitorId) {
-
-        return socket.emit(
-          'errorMessage',
-          'Please refresh the page and try again.'
-        );
-
-      }
-
-      let allowed = false;
-
-      if (pool) {
-
-        allowed =
-          await visitorHasAccess(
-            visitorId
-          );
-
-      } else {
-
-        allowed =
-          Boolean(
-            req.session?.accessExpiresAt &&
-            new Date(
-              req.session.accessExpiresAt
-            ) > new Date()
-          );
-
-      }
-
-      if (!allowed) {
-
-        return socket.emit(
-          'errorMessage',
-          'Your 24-hour access has expired. Please pay ₹11 again to continue.'
-        );
-
-      }
-
-      let roomId = null;
-
-      for (
-        const [id, value]
-        of waiting
-      ) {
-
-        if (value.socketId) {
-
-          roomId = id;
-
-          break;
-        }
-
-      }
-
-      if (roomId) {
-
-        const visitor =
-          waiting.get(roomId);
-
-        waiting.delete(roomId);
-
-        const room =
-          uid();
-
-        rooms.set(
-          room,
-          {
-            visitorSocket:
-              visitor.socketId,
-
-            ownerSocket:
-              null,
-
-            visitorId:
-              visitor.visitorId
-          }
-        );
-
-        socket.join(room);
-
-        io.sockets
-          .sockets
-          .get(visitor.socketId)
-          ?.join(room);
-
-        socket.emit(
-          'paired',
-          { room }
-        );
-
-        io.to(
-          visitor.socketId
-        ).emit(
-          'paired',
-          { room }
-        );
-
-      } else {
-
-        const id = uid();
-
-        waiting.set(
-          id,
-          {
-            socketId:
-              socket.id,
-
-            visitorId
-          }
-        );
-
-        socket.emit('waiting');
-
-        io.to('owners').emit(
-          'waitingList',
-          [...waiting.keys()]
-        );
-
-      }
-
-    }
-  );
-
-
-  /* Listener login */
-
-  socket.on(
-    'ownerAuth',
-    key => {
-
-      if (
-        !OWNER_KEY ||
-        key !== OWNER_KEY
-      ) {
-
-        return socket.emit(
-          'ownerAuthResult',
-          { ok:false }
-        );
-
-      }
-
-      socket.request.session.isOwner =
-        true;
-
-      socket.request.session.save(
-        () => {}
-      );
-
-      socket.join('owners');
-
-      socket.emit(
-        'ownerAuthResult',
-        { ok:true }
-      );
-
-      socket.emit(
-        'waitingList',
-        [...waiting.keys()]
-      );
-
-    }
-  );
-
-
-  /* Listener accepts visitor */
-
-  socket.on(
-    'ownerAccept',
-    async id => {
-
-      if (
-        !socket.request.session?.isOwner
-      ) return;
+        waitingCustomer.visitorId;
 
       const visitor =
-        waiting.get(id);
+        await getVisitor(visitorId);
 
-      if (!visitor) return;
+      if (!hasValidAccess(visitor)) {
+        waiting.delete(visitorSocketId);
 
-      waiting.delete(id);
+        visitorSocket.emit(
+          "errorMessage",
+          "Your 24-hour access has expired."
+        );
 
-      const room =
-        uid();
+        broadcastWaitingList();
 
-      rooms.set(
-        room,
-        {
-          visitorSocket:
-            visitor.socketId,
+        return;
+      }
 
-          ownerSocket:
-            socket.id,
+      /*
+        CREATE A UNIQUE PRIVATE ROOM.
 
-          visitorId:
-            visitor.visitorId
-        }
+        Only this visitor socket and this listener socket
+        are allowed inside this room.
+      */
+
+      const roomId = createId("room_");
+
+      rooms.set(roomId, {
+        visitorSocketId,
+        visitorId,
+        ownerSocketId: socket.id
+      });
+
+      socketRooms.set(
+        visitorSocketId,
+        roomId
       );
 
-      socket.join(room);
+      /*
+        Owner can handle multiple rooms.
+      */
 
-      io.sockets
-        .sockets
-        .get(visitor.socketId)
-        ?.join(room);
+      socket.join(roomId);
+      visitorSocket.join(roomId);
 
-      socket.emit(
-        'newChat',
-        { room }
-      );
+      waiting.delete(visitorSocketId);
 
-      io.to(
-        visitor.socketId
-      ).emit(
-        'paired',
-        { room }
-      );
+      socket.emit("newChat", {
+        room: roomId,
+        visitorId,
+        topic: waitingCustomer.topic
+      });
+
+      visitorSocket.emit("paired", {
+        room: roomId,
+        topic: waitingCustomer.topic
+      });
+
+      /*
+        Send previous messages for this room.
+      */
 
       const history =
-        await loadHistory(room);
+        await getMessages(roomId);
 
       if (history.length) {
-
-        socket.emit(
-          'history',
+        visitorSocket.emit(
+          "history",
           history
         );
 
+        socket.emit(
+          "history",
+          history
+        );
       }
 
-      io.to('owners').emit(
-        'waitingList',
-        [...waiting.keys()]
+      broadcastWaitingList();
+
+      console.log(
+        `Private room created: ${roomId}`
       );
+    } catch (err) {
+      console.error("ownerAccept error:", err);
 
+      socket.emit(
+        "errorMessage",
+        "Could not accept this customer."
+      );
     }
-  );
+  });
 
+  /* VISITOR MESSAGE */
 
-  /* Messages */
+  socket.on("message", async text => {
+    try {
+      if (socket.data.role !== "visitor") {
+        return;
+      }
 
-  socket.on(
-    'message',
-    async text => {
+      const cleanText =
+        String(text || "").trim();
 
-      const room =
-        [...socket.rooms]
-          .find(
-            r => rooms.has(r)
-          );
+      if (!cleanText) return;
 
-      if (!room) return;
-
-      const clean =
-        String(text || '')
-          .trim()
-          .slice(0,2000);
-
-      if (!clean) return;
-
-      const data =
-        rooms.get(room);
-
-      const role =
-        data.visitorSocket === socket.id
-          ? 'visitor'
-          : 'owner';
-
-      const msg = {
-        from: role,
-        text: clean,
-        createdAt:
-          new Date().toISOString()
-      };
-
-      if (pool) {
-
-        await db.query(
-          `
-          INSERT INTO messages
-          (
-            room_id,
-            sender_role,
-            user_id,
-            body
-          )
-          VALUES($1,$2,$3,$4)
-          `,
-          [
-            room,
-            role,
-            null,
-            clean
-          ]
+      if (cleanText.length > 2000) {
+        socket.emit(
+          "errorMessage",
+          "Message is too long."
         );
 
+        return;
       }
 
-      io.to(room).emit(
-        'message',
-        msg
-      );
+      const roomId =
+        socketRooms.get(socket.id);
 
-    }
-  );
+      if (!roomId) {
+        socket.emit(
+          "errorMessage",
+          "Please wait for the listener to join."
+        );
 
+        return;
+      }
 
-  /* Listener message */
+      const room = rooms.get(roomId);
 
-  socket.on(
-    'ownerMessage',
-    async ({room,text}) => {
+      if (!room) {
+        return;
+      }
+
+      /*
+        SECURITY CHECK:
+        This visitor can only send inside their own room.
+      */
 
       if (
-        !socket.request.session?.isOwner ||
-        !rooms.has(room)
-      ) return;
-
-      const clean =
-        String(text || '')
-          .trim()
-          .slice(0,2000);
-
-      if (!clean) return;
-
-      const msg = {
-        from:'owner',
-        text:clean,
-        createdAt:
-          new Date().toISOString()
-      };
-
-      if (pool) {
-
-        await db.query(
-          `
-          INSERT INTO messages
-          (
-            room_id,
-            sender_role,
-            user_id,
-            body
-          )
-          VALUES($1,$2,$3,$4)
-          `,
-          [
-            room,
-            'owner',
-            null,
-            clean
-          ]
-        );
-
+        room.visitorSocketId !== socket.id
+      ) {
+        return;
       }
 
-      io.to(room).emit(
-        'message',
-        msg
+      await saveMessage(
+        roomId,
+        room.visitorId,
+        "visitor",
+        cleanText
       );
 
+      io.to(roomId).emit("message", {
+        from: "visitor",
+        text: cleanText
+      });
+    } catch (err) {
+      console.error("visitor message error:", err);
     }
-  );
+  });
 
+  /* OWNER MESSAGE */
 
-  socket.on(
-    'leave',
-    () => {
+  socket.on("ownerMessage", async data => {
+    try {
+      if (socket.data.role !== "owner") {
+        return;
+      }
+
+      const roomId =
+        String(data?.room || "");
+
+      const cleanText =
+        String(data?.text || "").trim();
+
+      if (!roomId || !cleanText) {
+        return;
+      }
+
+      if (cleanText.length > 2000) {
+        socket.emit(
+          "errorMessage",
+          "Message is too long."
+        );
+
+        return;
+      }
 
       const room =
-        [...socket.rooms]
-          .find(
-            r => rooms.has(r)
-          );
+        rooms.get(roomId);
 
-      if (!room) return;
+      if (!room) {
+        return;
+      }
 
-      io.to(room).emit(
-        'ended'
+      /*
+        SECURITY CHECK:
+        Only the listener who owns this room can send.
+      */
+
+      if (
+        room.ownerSocketId !== socket.id
+      ) {
+        return;
+      }
+
+      await saveMessage(
+        roomId,
+        room.visitorId,
+        "owner",
+        cleanText
       );
 
-      rooms.delete(room);
-
+      io.to(roomId).emit("message", {
+        from: "owner",
+        text: cleanText
+      });
+    } catch (err) {
+      console.error("owner message error:", err);
     }
-  );
+  });
 
+  /* DISCONNECT */
 
-  socket.on(
-    'disconnect',
-    () => {
+  socket.on("disconnect", () => {
+    console.log(
+      "Socket disconnected:",
+      socket.id
+    );
 
-      for (
-        const [id,value]
-        of waiting
-      ) {
+    /*
+      If visitor was still waiting,
+      remove them from waiting list.
+    */
 
-        if (
-          value.socketId === socket.id
-        ) {
+    if (waiting.has(socket.id)) {
+      waiting.delete(socket.id);
 
-          waiting.delete(id);
+      broadcastWaitingList();
+    }
 
+    /*
+      If owner disconnects, notify customers
+      whose rooms were connected to this owner.
+    */
+
+    if (owners.has(socket.id)) {
+      owners.delete(socket.id);
+
+      for (const [roomId, room] of rooms.entries()) {
+        if (room.ownerSocketId === socket.id) {
+          const visitorSocket =
+            io.sockets.sockets.get(
+              room.visitorSocketId
+            );
+
+          if (visitorSocket) {
+            visitorSocket.emit(
+              "ended",
+              "The listener has disconnected."
+            );
+          }
+
+          socketRooms.delete(
+            room.visitorSocketId
+          );
+
+          rooms.delete(roomId);
+        }
+      }
+    }
+
+    /*
+      If visitor disconnects,
+      remove their room connection.
+    */
+
+    const roomId =
+      socketRooms.get(socket.id);
+
+    if (roomId) {
+      const room =
+        rooms.get(roomId);
+
+      if (room) {
+        const otherSocketId =
+          room.ownerSocketId === socket.id
+            ? room.visitorSocketId
+            : room.ownerSocketId;
+
+        const otherSocket =
+          io.sockets.sockets.get(
+            otherSocketId
+          );
+
+        if (otherSocket) {
+          otherSocket.emit(
+            "ended",
+            "The customer has disconnected."
+          );
         }
 
+        rooms.delete(roomId);
       }
 
+      socketRooms.delete(socket.id);
     }
-  );
-
+  });
 });
 
+/*
+  IMPORTANT:
+  Express session is needed by Socket.IO.
 
-/* Express 5 wildcard route */
+  This middleware makes the same visitor session
+  available to socket connections.
+*/
 
-app.get(
-  '/{*splat}',
-  (req,res,next) => {
+io.engine.use(session(sessionOptions));
 
-    if (
-      req.path.startsWith('/api/')
-    ) return next();
+/* FALLBACK */
 
-    res.sendFile(
-      path.join(
-        __dirname,
-        'public',
-        'index.html'
-      )
-    );
+app.get("/{*splat}", (req, res) => {
+  res.sendFile(
+    path.join(
+      __dirname,
+      "public",
+      "index.html"
+    )
+  );
+});
 
-  }
-);
+/* START */
 
-
-/* Start */
-
-(async()=>{
-
+async function start() {
   try {
+    await setupDatabase();
 
-    await db.init();
+    server.listen(PORT, "0.0.0.0", () => {
+      console.log(
+        `MindSpace v4 running on port ${PORT}`
+      );
 
-    server.listen(
-      PORT,
-      '0.0.0.0',
-      () => {
-
+      if (!hasDatabase) {
         console.log(
-          `MindSpace v3 running on port ${PORT}`
+          "DATABASE_URL is not set. Using temporary memory storage."
         );
-
       }
-    );
 
-  } catch(e) {
-
+      if (!OWNER_KEY) {
+        console.log(
+          "MINDSPACE_OWNER_KEY is not set. Listener dashboard is disabled."
+        );
+      }
+    });
+  } catch (err) {
     console.error(
-      'Startup error:',
-      e
+      "Startup error:",
+      err
     );
 
     process.exit(1);
-
   }
+}
 
-})();
+start();
