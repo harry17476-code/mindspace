@@ -238,6 +238,6 @@ io.on('connection', socket => {
   socket.on('disconnect',()=>{ for(const [id,v] of waiting){if(v.socketId===socket.id)waiting.delete(id);} });
 });
 
-app.get('*', (req,res,next)=> { if (req.path.startsWith('/api/')) return next(); res.sendFile(path.join(__dirname,'public','index.html')); });
+app.get('{*splat}', (req,res,next)=> { if (req.path.startsWith('/api/')) return next(); res.sendFile(path.join(__dirname,'public','index.html')); });
 
 (async()=>{ try { await db.init(); server.listen(PORT,'0.0.0.0',()=>console.log(`MindSpace v2 running on port ${PORT}`)); } catch(e){ console.error('Startup error',e); process.exit(1); } })();
