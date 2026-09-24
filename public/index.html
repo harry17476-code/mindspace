@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MindSpace — Private 1-to-1 Support</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#f4f6fb;color:#182033}.wrap{min-height:100vh;display:grid;place-items:center;padding:20px}.card{width:min(920px,100%);background:#fff;border:1px solid #e3e7ef;border-radius:22px;box-shadow:0 20px 60px #1a27400d;overflow:hidden}.head{padding:24px;border-bottom:1px solid #edf0f5}.brand{font-size:25px;font-weight:800}.sub{color:#69758a;font-size:13px;margin-top:4px}.body{padding:26px}.choices{display:grid;grid-template-columns:1fr 1fr;gap:14px}.choice{padding:22px;border:1px solid #e0e5ee;border-radius:15px;background:#fff;text-align:left}.choice:hover{border-color:#7481ff}.choice b{display:block;font-size:17px;margin-bottom:6px}.choice span{color:#68748a;font-size:13px}.chat{display:none;height:650px;flex-direction:column}.chathead{padding:16px 20px;border-bottom:1px solid #edf0f5;display:flex;justify-content:space-between}.messages{flex:1;padding:22px;overflow:auto;background:#fafbfe}.m{margin:10px 0;display:flex}.m.me{justify-content:flex-end}.bubble{max-width:75%;padding:11px 14px;border-radius:15px;background:white;border:1px solid #e4e8f0;white-space:pre-wrap;overflow-wrap:anywhere}.me .bubble{background:#6977f8;color:#fff;border:0}.composer{display:flex;gap:10px;padding:14px;border-top:1px solid #edf0f5}.composer input{flex:1;padding:13px;border:1px solid #dbe1eb;border-radius:12px}.send,.end,.primary{padding:12px 16px;border-radius:11px;font-weight:700}.send,.primary{background:#6977f8;color:white}.end{background:#eef1f6;color:#334057}.wait{text-align:center;padding:70px 20px;color:#68748a}.safety{font-size:11px;color:#8993a4;text-align:center;padding:10px 20px;border-top:1px solid #edf0f5;line-height:1.5}.owner{display:none}.queue{border:1px solid #e0e5ee;border-radius:14px;padding:14px;margin-bottom:14px}.visitor{display:flex;justify-content:space-between;align-items:center;padding:10px;background:#fafbfe;border-radius:10px;margin:7px 0}.modal{position:fixed;inset:0;background:#0006;display:none;place-items:center;padding:20px}.modalbox{background:white;padding:24px;border-radius:18px;width:min(420px,100%)}.modalbox input{width:100%;padding:12px;border:1px solid #dbe1eb;border-radius:10px;margin:10px 0}.small{font-size:12px;color:#748096;line-height:1.5}@media(max-width:650px){.choices{grid-template-columns:1fr}.chat{height:calc(100vh - 40px)}}
+</style></head>
+<body><div class="wrap"><div class="card">
+<div class="head"><div class="brand">MindSpace</div><div class="sub">Private 1-to-1 conversations • no public profiles • room-isolated messages</div></div>
+
+<div id="start" class="body"><h2>How would you like to enter?</h2>
+<div class="choices">
+<button class="choice" onclick="visitor()"><b>💬 I want to talk</b><span>Share what's on your mind privately with the listener.</span></button>
+<button class="choice" onclick="showOwner()"><b>🤝 I am the listener</b><span>Owner-only listener dashboard.</span></button>
+</div>
+<p class="small">No real name, phone number, or public profile is required for the prototype. Don't share passwords, addresses, financial information, or other sensitive identifying details.</p></div>
+
+<div id="owner" class="body owner"><h2>Listener dashboard</h2><div id="queue" class="queue"><b>Waiting people</b><div id="list" class="small">No one is waiting.</div></div><div id="ownerChats"></div></div>
+
+<div id="chat" class="chat"><div class="chathead"><b id="status">Private 1-to-1 chat</b><button class="end" onclick="leave()">End chat</button></div><div id="messages" class="messages"><div class="wait" id="wait">Connecting securely…</div></div><div class="composer"><input id="input" placeholder="Write a message…" onkeydown="if(event.key==='Enter')send()"><button class="send" onclick="send()">Send</button></div><div class="safety">Peer support only — not professional therapy. For immediate danger or a serious mental-health crisis, contact a trusted adult, qualified professional, or local emergency service.</div></div>
+
+<div id="modal" class="modal"><div class="modalbox"><h3>Listener access</h3><p class="small">Enter the private owner key configured on the server.</p><input id="key" type="password" placeholder="Owner key"><button class="primary" onclick="ownerLogin()">Continue</button></div></div>
+</div></div>
+<script src="/socket.io/socket.io.js"></script><script>
+let socket,role='visitor',activeRoom=null;
+function connect(){socket=io();socket.on('waiting',()=>setStatus('Waiting for a listener…'));socket.on('paired',d=>{activeRoom=d.room;setStatus('Private 1-to-1 chat');showChat();clearWait('You are connected. Share only what you are comfortable sharing.');});socket.on('message',m=>render(m));socket.on('ended',()=>{setStatus('Conversation ended');document.getElementById('input').disabled=true;});socket.on('ownerAuthResult',r=>{if(r.ok){document.getElementById('modal').style.display='none';document.getElementById('start').style.display='none';document.getElementById('owner').style.display='block';setStatus('Listener dashboard')}else alert('Access denied.');});socket.on('waitingList',list=>{const el=document.getElementById('list');el.innerHTML='';if(!list.length){el.textContent='No one is waiting.';return}list.forEach(v=>{let row=document.createElement('div');row.className='visitor';row.innerHTML='<span>Anonymous visitor</span>';let b=document.createElement('button');b.className='primary';b.textContent='Accept';b.onclick=()=>{socket.emit('ownerAccept',v.id)};row.appendChild(b);el.appendChild(row)})});socket.on('newChat',d=>addOwnerChat(d.room));}
+function visitor(){role='visitor';document.getElementById('start').style.display='none';document.getElementById('chat').style.display='flex';connect();socket.emit('visitorJoin')}
+function showOwner(){document.getElementById('modal').style.display='grid'}
+function ownerLogin(){role='owner';connect();socket.emit('ownerAuth',document.getElementById('key').value)}
+function showChat(){document.getElementById('chat').style.display='flex'}
+function setStatus(t){document.getElementById('status').textContent=t}
+function clearWait(t){let w=document.getElementById('wait');if(w)w.textContent=t}
+function render(m){let w=document.getElementById('wait');if(w)w.remove();let d=document.createElement('div');d.className='m '+(m.from===role?'me':'');let b=document.createElement('div');b.className='bubble';b.textContent=m.text;d.appendChild(b);document.getElementById('messages').appendChild(d);document.getElementById('messages').scrollTop=999999}
+function send(){let i=document.getElementById('input'),t=i.value.trim();if(!t||!socket)return;if(role==='owner'){if(!activeRoom)return;socket.emit('ownerMessage',{room:activeRoom,text:t})}else socket.emit('message',t);i.value=''}
+function addOwnerChat(room){activeRoom=room;showChat();setStatus('Private 1-to-1 chat');document.getElementById('messages').innerHTML='<div class="wait" id="wait">Chat opened. Messages in this room are isolated from other visitors.</div>'}
+function leave(){if(socket)socket.emit('leave');location.reload()}
+</script></body></html>
