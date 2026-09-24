@@ -1,14 +1,19 @@
 {
-  "name": "mindspace-private-support-secure",
-  "version": "1.1.0",
+  "name": "mindspace-private-support",
+  "version": "2.0.0",
   "private": true,
-  "scripts": {
-    "start": "node server.js"
-  },
+  "description": "MindSpace private 1-to-1 peer support prototype",
+  "main": "server.js",
+  "scripts": {"start": "node server.js"},
+  "engines": {"node": ">=20"},
   "dependencies": {
-    "express": "^4.21.2",
+    "bcryptjs": "^3.0.2",
+    "connect-pg-simple": "^10.0.0",
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.1.0",
+    "express-session": "^1.18.2",
     "helmet": "^8.1.0",
-    "express-rate-limit": "^7.5.0",
+    "pg": "^8.16.3",
     "socket.io": "^4.8.1"
   }
 }
