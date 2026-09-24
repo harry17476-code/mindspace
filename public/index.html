@@ -1,52 +1,1020 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MindSpace — Private Peer Support</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MindSpace</title>
+
 <style>
-:root{--bg:#f4f6fb;--card:#fff;--text:#182033;--muted:#69758a;--line:#e2e7f0;--accent:#6977f8;--accent2:#5563e9}*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:var(--bg);color:var(--text)}button,input,textarea{font:inherit}.wrap{min-height:100vh;display:grid;place-items:center;padding:20px}.card{width:min(1000px,100%);background:var(--card);border:1px solid var(--line);border-radius:22px;box-shadow:0 20px 60px #1a27400d;overflow:hidden}.head{padding:24px;border-bottom:1px solid #edf0f5;display:flex;justify-content:space-between;gap:15px;align-items:center}.brand{font-size:25px;font-weight:800}.sub{color:var(--muted);font-size:13px;margin-top:4px}.body{padding:26px}.actions{display:flex;gap:10px;flex-wrap:wrap}.primary,.secondary,.danger{border:0;border-radius:11px;padding:12px 16px;font-weight:700;cursor:pointer}.primary{background:var(--accent);color:#fff}.primary:hover{background:var(--accent2)}.secondary{background:#eef1f6;color:#334057}.danger{background:#feecec;color:#a42b2b}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.panel{border:1px solid var(--line);border-radius:16px;padding:18px}.muted,.small{color:var(--muted);font-size:13px;line-height:1.5}.hide{display:none!important}.modal{position:fixed;inset:0;background:#0006;display:none;place-items:center;padding:20px;z-index:5}.modalbox{background:#fff;padding:24px;border-radius:18px;width:min(440px,100%)}.modalbox input,.modalbox textarea,select{width:100%;padding:12px;border:1px solid #dbe1eb;border-radius:10px;margin:7px 0 12px}.tabs{display:flex;gap:8px;border-bottom:1px solid var(--line);padding:0 26px}.tab{padding:14px 4px;border:0;background:none;cursor:pointer;color:var(--muted);font-weight:700}.tab.active{color:var(--accent);border-bottom:2px solid var(--accent)}.chat{height:650px;display:flex;flex-direction:column}.chathead{padding:16px 20px;border-bottom:1px solid #edf0f5;display:flex;justify-content:space-between;align-items:center}.messages{flex:1;padding:22px;overflow:auto;background:#fafbfe}.m{margin:10px 0;display:flex}.m.me{justify-content:flex-end}.bubble{max-width:78%;padding:11px 14px;border-radius:15px;background:#fff;border:1px solid #e4e8f0;white-space:pre-wrap;overflow-wrap:anywhere}.me .bubble{background:var(--accent);color:#fff;border:0}.composer{display:flex;gap:10px;padding:14px;border-top:1px solid #edf0f5}.composer input{flex:1;padding:13px;border:1px solid #dbe1eb;border-radius:12px}.safety{font-size:11px;color:#8993a4;text-align:center;padding:10px 20px;border-top:1px solid #edf0f5;line-height:1.5}.stars{font-size:26px;letter-spacing:4px;cursor:pointer}.review{border-top:1px solid var(--line);padding:13px 0}.badge{display:inline-block;background:#eef1ff;color:#4f5dde;border-radius:999px;padding:6px 9px;font-size:12px;font-weight:700}.count{font-size:26px;font-weight:800}.notice{padding:12px;border-radius:12px;background:#fff8df;color:#705b16;margin:12px 0}.owner-list{max-height:400px;overflow:auto}.visitor{display:flex;justify-content:space-between;align-items:center;padding:10px;background:#fafbfe;border-radius:10px;margin:7px 0}
-@media(max-width:700px){.wrap{padding:8px}.card{border-radius:16px}.head{padding:18px}.body{padding:18px}.grid{grid-template-columns:1fr}.chat{height:calc(100vh - 80px);min-height:500px}.bubble{max-width:88%}.composer{position:sticky;bottom:0;background:#fff}.tabs{padding:0 18px;overflow:auto}.actions{display:grid;grid-template-columns:1fr}.actions button{width:100%}}
+:root{
+  --bg:#f4f6fb;
+  --card:#fff;
+  --text:#182033;
+  --muted:#69758a;
+  --line:#e2e7f0;
+  --accent:#6977f8;
+  --accent2:#5563e9;
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  font-family:system-ui,-apple-system,Segoe UI,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+}
+
+button,input,textarea{font:inherit}
+
+.wrap{
+  min-height:100vh;
+  padding:20px;
+}
+
+.card{
+  width:min(1200px,100%);
+  min-height:calc(100vh - 40px);
+  margin:auto;
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:22px;
+  overflow:hidden;
+  box-shadow:0 20px 60px #1a27400d;
+}
+
+.head{
+  padding:20px 25px;
+  border-bottom:1px solid var(--line);
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.brand{
+  font-size:26px;
+  font-weight:800;
+}
+
+.sub{
+  color:var(--muted);
+  font-size:13px;
+  margin-top:3px;
+}
+
+.badge{
+  background:#eef1ff;
+  color:#4f5dde;
+  padding:7px 12px;
+  border-radius:20px;
+  font-size:12px;
+  font-weight:700;
+}
+
+.main{
+  display:grid;
+  grid-template-columns:280px 1fr;
+  min-height:650px;
+}
+
+.sidebar{
+  border-right:1px solid var(--line);
+  padding:22px;
+  background:#fafbfe;
+}
+
+.sidebar h3{
+  margin-top:0;
+}
+
+.topic{
+  width:100%;
+  text-align:left;
+  border:1px solid var(--line);
+  background:#fff;
+  padding:13px;
+  border-radius:12px;
+  margin:6px 0;
+  cursor:pointer;
+  font-weight:600;
+}
+
+.topic:hover,
+.topic.selected{
+  background:#eef1ff;
+  border-color:#cdd3ff;
+  color:#4f5dde;
+}
+
+.content{
+  padding:25px;
+}
+
+.panel{
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:20px;
+  margin-bottom:16px;
+}
+
+.center{
+  text-align:center;
+  padding:50px 20px;
+}
+
+.primary,
+.secondary,
+.danger{
+  border:0;
+  border-radius:11px;
+  padding:12px 17px;
+  font-weight:700;
+  cursor:pointer;
+}
+
+.primary{
+  background:var(--accent);
+  color:white;
+}
+
+.primary:hover{
+  background:var(--accent2);
+}
+
+.secondary{
+  background:#eef1f6;
+  color:#334057;
+}
+
+.danger{
+  background:#feecec;
+  color:#a42b2b;
+}
+
+.muted,
+.small{
+  color:var(--muted);
+  font-size:13px;
+  line-height:1.5;
+}
+
+.hide{display:none!important}
+
+.price{
+  font-size:30px;
+  font-weight:800;
+  margin:15px 0;
+}
+
+.timer{
+  font-size:14px;
+  font-weight:700;
+  color:#4f5dde;
+  margin-bottom:10px;
+}
+
+.chat{
+  height:600px;
+  display:flex;
+  flex-direction:column;
+  border:1px solid var(--line);
+  border-radius:16px;
+  overflow:hidden;
+}
+
+.chathead{
+  padding:15px 18px;
+  border-bottom:1px solid var(--line);
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.messages{
+  flex:1;
+  padding:20px;
+  overflow:auto;
+  background:#fafbfe;
+}
+
+.m{
+  margin:10px 0;
+  display:flex;
+}
+
+.m.me{
+  justify-content:flex-end;
+}
+
+.bubble{
+  max-width:78%;
+  padding:11px 14px;
+  border-radius:15px;
+  background:white;
+  border:1px solid #e4e8f0;
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+}
+
+.me .bubble{
+  background:var(--accent);
+  color:white;
+  border:0;
+}
+
+.composer{
+  display:flex;
+  gap:10px;
+  padding:14px;
+  border-top:1px solid var(--line);
+}
+
+.composer input{
+  flex:1;
+  padding:13px;
+  border:1px solid #dbe1eb;
+  border-radius:12px;
+}
+
+.tabs{
+  display:flex;
+  gap:18px;
+  border-bottom:1px solid var(--line);
+  padding:0 25px;
+}
+
+.tab{
+  padding:14px 4px;
+  border:0;
+  background:none;
+  cursor:pointer;
+  color:var(--muted);
+  font-weight:700;
+}
+
+.tab.active{
+  color:var(--accent);
+  border-bottom:2px solid var(--accent);
+}
+
+.tabpage{padding:25px}
+
+.review{
+  border-top:1px solid var(--line);
+  padding:14px 0;
+}
+
+.stars{
+  font-size:26px;
+  cursor:pointer;
+  letter-spacing:4px;
+}
+
+.owner-chat{
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:12px;
+  margin:8px 0;
+}
+
+.notice{
+  padding:12px;
+  border-radius:12px;
+  background:#fff8df;
+  color:#705b16;
+  margin:12px 0;
+}
+
+@media(max-width:750px){
+  .wrap{padding:7px}
+  .card{min-height:calc(100vh - 14px);border-radius:16px}
+  .main{grid-template-columns:1fr}
+  .sidebar{
+    border-right:0;
+    border-bottom:1px solid var(--line);
+  }
+  .topic{
+    display:inline-block;
+    width:auto;
+    margin:4px;
+  }
+  .content{padding:15px}
+  .chat{height:calc(100vh - 260px);min-height:450px}
+  .bubble{max-width:88%}
+}
 </style>
 </head>
+
 <body>
-<div class="wrap"><div class="card">
-<header class="head"><div><div class="brand">MindSpace</div><div class="sub">Social listener & peer support • private 1-to-1 conversations</div></div><div id="accessBadge" class="badge hide"></div></header>
-<nav class="tabs"><button class="tab active" data-tab="home">Home</button><button class="tab" data-tab="reviews">Reviews</button><button class="tab" data-tab="owner">Listener</button></nav>
-<section id="home" class="body tabpage">
-<h2>Share your feelings, thoughts, or ideas.</h2><p class="muted">A private peer-support conversation. This is not professional therapy or medical care.</p>
-<div id="accountBox" class="panel"><h3>Start with an account</h3><p class="small">Use a nickname. Don't share passwords, addresses, financial details, or other sensitive identifying information.</p><div class="actions"><button class="primary" onclick="openAuth('signup')">Create account</button><button class="secondary" onclick="openAuth('login')">Log in</button></div></div>
-<div id="loggedBox" class="panel hide"><b id="hello"></b><div id="accessInfo" class="small" style="margin:8px 0"></div><div class="actions"><button id="unlockBtn" class="primary" onclick="unlock()">Unlock 24 hours — ₹11</button><button id="talkBtn" class="secondary hide" onclick="startChat()">Start a Private Conversation</button><button class="danger" onclick="logout()">Log out</button></div><div id="demoNotice" class="notice hide">Demo payment mode: this button activates access for testing but does not charge money.</div></div>
-<div id="chatWrap" class="chat hide"><div class="chathead"><b id="status">Private 1-to-1 chat</b><button class="secondary" onclick="leaveChat()">End chat</button></div><div id="messages" class="messages"><div id="wait" class="muted" style="text-align:center;padding:60px 10px">Connecting…</div></div><div class="composer"><input id="input" maxlength="2000" placeholder="Write a message…" onkeydown="if(event.key==='Enter')send()"><button class="primary" onclick="send()">Send</button></div><div class="safety">Peer support only. If you are in immediate danger or need urgent mental-health care, contact a trusted adult, qualified professional, or local emergency service.</div></div>
+
+<div class="wrap">
+<div class="card">
+
+<header class="head">
+  <div>
+    <div class="brand">MindSpace</div>
+    <div class="sub">Share what is on your mind.</div>
+  </div>
+  <div id="accessBadge" class="badge hide"></div>
+</header>
+
+<div class="main">
+
+<aside class="sidebar">
+  <h3>What's on your mind?</h3>
+  <div class="small">Choose a topic to begin.</div>
+
+  <button class="topic" onclick="selectTopic('Relationship')">❤️ Relationship</button>
+  <button class="topic" onclick="selectTopic('Friends')">👥 Friends</button>
+  <button class="topic" onclick="selectTopic('Love')">💕 Love</button>
+  <button class="topic" onclick="selectTopic('Family')">🏠 Family</button>
+  <button class="topic" onclick="selectTopic('Studies')">📚 Studies</button>
+  <button class="topic" onclick="selectTopic('Work')">💼 Work</button>
+  <button class="topic" onclick="selectTopic('Stress')">🌿 Stress</button>
+  <button class="topic" onclick="selectTopic('Other')">💭 Something else</button>
+</aside>
+
+<section class="content">
+
+<div id="welcome">
+  <div class="center">
+    <h1>What's on your mind?</h1>
+    <p class="muted">
+      Choose a topic from the left and start your private conversation.
+    </p>
+  </div>
+</div>
+
+<div id="paymentBox" class="panel center hide">
+  <h2 id="topicTitle">Your topic</h2>
+
+  <p class="muted">
+    Start a private 1-to-1 conversation.
+  </p>
+
+  <div class="price">₹11</div>
+
+  <p class="muted">
+    One payment gives you 24 hours of chat access.
+  </p>
+
+  <button class="primary" onclick="unlock()">
+    Pay ₹11 & Start Chat
+  </button>
+
+  <div id="demoNotice" class="notice">
+    Testing mode: no real money will be charged yet.
+  </div>
+</div>
+
+<div id="activeBox" class="panel hide">
+  <h2 id="activeTopic"></h2>
+
+  <div id="timer" class="timer"></div>
+
+  <button class="primary" onclick="startChat()">
+    Start Chat
+  </button>
+
+  <button class="secondary" onclick="showTopics()">
+    Change Topic
+  </button>
+</div>
+
+<div id="chatWrap" class="chat hide">
+
+  <div class="chathead">
+    <div>
+      <b id="status">Private conversation</b>
+      <div id="chatTimer" class="small"></div>
+    </div>
+
+    <button class="secondary" onclick="leaveChat()">End</button>
+  </div>
+
+  <div id="messages" class="messages">
+    <div id="wait" class="muted" style="text-align:center;padding:60px 10px">
+      Connecting…
+    </div>
+  </div>
+
+  <div class="composer">
+    <input
+      id="input"
+      maxlength="2000"
+      placeholder="Write a message..."
+      onkeydown="if(event.key==='Enter')send()"
+    >
+    <button class="primary" onclick="send()">Send</button>
+  </div>
+
+</div>
+
 </section>
-<section id="reviews" class="body tabpage hide"><h2>Experiences</h2><p class="muted">Reviews are optional and should not include private identifying information.</p><div id="reviewList"></div><div id="reviewForm" class="panel hide"><h3>Leave a review</h3><div id="stars" class="stars">★★★★★</div><textarea id="reviewText" maxlength="500" rows="4" placeholder="Share your experience"></textarea><button class="primary" onclick="submitReview()">Submit review</button></div></section>
-<section id="owner" class="body tabpage hide"><h2>Listener dashboard</h2><p class="muted">Owner-only area. Keep the owner key on the server; never put it in website code.</p><button class="primary" onclick="ownerLogin()">Open listener dashboard</button><div id="ownerDash" class="hide"><div class="grid" style="margin-top:15px"><div class="panel"><div class="count" id="statUsers">0</div><div class="small">Accounts</div></div><div class="panel"><div class="count" id="statPasses">0</div><div class="small">24-hour passes</div></div><div class="panel"><div class="count" id="statReviews">0</div><div class="small">Reviews</div></div></div></div></section>
-</div></div>
-<div id="modal" class="modal"><div class="modalbox"><h3 id="modalTitle">Create account</h3><input id="authUser" autocomplete="username" placeholder="Username"><input id="authPass" type="password" autocomplete="new-password" placeholder="Password (8+ characters)"><div class="actions"><button class="primary" onclick="submitAuth()">Continue</button><button class="secondary" onclick="closeModal()">Cancel</button></div><p id="authMsg" class="small"></p></div></div>
-<div id="ownerModal" class="modal"><div class="modalbox"><h3>Listener access</h3><input id="ownerKey" type="password" placeholder="Owner key"><div class="actions"><button class="primary" onclick="submitOwner()">Continue</button><button class="secondary" onclick="document.getElementById('ownerModal').style.display='none'">Cancel</button></div><p id="ownerMsg" class="small"></p></div></div>
+</div>
+
+<nav class="tabs">
+  <button class="tab active" data-tab="home">Home</button>
+  <button class="tab" data-tab="reviews">Reviews</button>
+  <button class="tab" data-tab="owner">Listener</button>
+</nav>
+
+<section id="reviews" class="tabpage hide">
+  <h2>Reviews</h2>
+
+  <div id="reviewList"></div>
+
+  <div class="panel">
+    <h3>Leave a review</h3>
+
+    <div id="stars" class="stars">★★★★★</div>
+
+    <textarea
+      id="reviewText"
+      maxlength="500"
+      rows="4"
+      style="width:100%;padding:12px;border:1px solid #dbe1eb;border-radius:10px"
+      placeholder="Share your experience"
+    ></textarea>
+
+    <br><br>
+
+    <button class="primary" onclick="submitReview()">
+      Submit Review
+    </button>
+  </div>
+</section>
+
+<section id="owner" class="tabpage hide">
+
+  <h2>Listener Dashboard</h2>
+
+  <button class="primary" onclick="ownerLogin()">
+    Open Listener Dashboard
+  </button>
+
+  <div id="ownerDash" class="hide">
+
+    <div class="panel">
+      <b>Waiting conversations</b>
+      <div id="waitingList"></div>
+    </div>
+
+    <div id="ownerChat" class="chat hide">
+
+      <div class="chathead">
+        <b>Private conversation</b>
+      </div>
+
+      <div id="ownerMessages" class="messages"></div>
+
+      <div class="composer">
+        <input
+          id="ownerInput"
+          maxlength="2000"
+          placeholder="Reply..."
+          onkeydown="if(event.key==='Enter')ownerSend()"
+        >
+        <button class="primary" onclick="ownerSend()">Send</button>
+      </div>
+
+    </div>
+
+  </div>
+</section>
+
+</div>
+</div>
+
+<div id="ownerModal" class="hide"
+style="position:fixed;inset:0;background:#0006;display:none;place-items:center;padding:20px">
+
+<div class="panel" style="background:white;width:min(420px,100%)">
+
+<h3>Listener Access</h3>
+
+<input
+id="ownerKey"
+type="password"
+placeholder="Owner key"
+style="width:100%;padding:12px;border:1px solid #dbe1eb;border-radius:10px"
+>
+
+<br><br>
+
+<button class="primary" onclick="submitOwner()">Continue</button>
+
+<button class="secondary"
+onclick="document.getElementById('ownerModal').style.display='none'">
+Cancel
+</button>
+
+<p id="ownerMsg" class="small"></p>
+
+</div>
+</div>
+
 <script src="/socket.io/socket.io.js"></script>
+
 <script>
-let socket=null, role='visitor', activeRoom=null, authMode='signup', rating=5;
+
+let socket=null;
+let role='visitor';
+let activeRoom=null;
+let selectedTopic=null;
+let accessExpiresAt=null;
+let ownerRoom=null;
+let rating=5;
+
 const $=id=>document.getElementById(id);
-function openAuth(mode){authMode=mode;$('modalTitle').textContent=mode==='signup'?'Create account':'Log in';$('authPass').autocomplete=mode==='signup'?'new-password':'current-password';$('authMsg').textContent='';$('modal').style.display='grid'}
-function closeModal(){$('modal').style.display='none'}
-async function api(url,opts={}){const r=await fetch(url,{headers:{'Content-Type':'application/json'},...opts});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||'Request failed');return d}
-async function submitAuth(){try{const d=await api('/api/'+authMode,{method:'POST',body:JSON.stringify({username:$('authUser').value.trim(),password:$('authPass').value})});closeModal();loadMe()}catch(e){$('authMsg').textContent=e.message}}
-async function loadMe(){try{const d=await api('/api/me');if(!d.loggedIn){$('accountBox').classList.remove('hide');$('loggedBox').classList.add('hide');$('accessBadge').classList.add('hide');return}$('accountBox').classList.add('hide');$('loggedBox').classList.remove('hide');$('hello').textContent='Hello, '+d.username;$('accessBadge').classList.remove('hide');if(d.hasAccess){$('accessBadge').textContent='Access active';$('unlockBtn').classList.add('hide');$('talkBtn').classList.remove('hide');$('demoNotice').classList.add('hide');$('accessInfo').textContent='Access until '+new Date(d.accessExpiresAt).toLocaleString()}else{$('accessBadge').textContent='Locked';$('unlockBtn').classList.remove('hide');$('talkBtn').classList.add('hide');$('accessInfo').textContent='Unlock gives 24-hour chat access.';$('demoNotice').classList.remove('hide')}}catch(e){console.error(e)}}
-async function unlock(){try{const d=await api('/api/unlock',{method:'POST'});alert(d.demo?'Demo access activated for 24 hours.':'Access activated.');loadMe()}catch(e){alert(e.message)}}
-async function logout(){await api('/api/logout',{method:'POST'});if(socket)socket.disconnect();activeRoom=null;loadMe()}
-function startChat(){role='visitor';$('chatWrap').classList.remove('hide');$('messages').innerHTML='<div id="wait" class="muted" style="text-align:center;padding:60px 10px">Connecting to a listener…</div>';connect();socket.emit('visitorJoin')}
-function connect(){if(socket)socket.disconnect();socket=io();socket.on('waiting',()=>setStatus('Waiting for a listener…'));socket.on('paired',d=>{activeRoom=d.room;setStatus('Private 1-to-1 chat');clearWait('You are connected.');$('chatWrap').classList.remove('hide')});socket.on('message',render);socket.on('history',h=>h.forEach(render));socket.on('errorMessage',m=>alert(m));socket.on('ended',()=>{setStatus('Conversation ended');$('input').disabled=true});socket.on('ownerAuthResult',r=>{if(!r.ok)return $('ownerMsg').textContent='Access denied.';$('ownerModal').style.display='none';$('ownerDash').classList.remove('hide');loadStats()})}
-function setStatus(t){$('status').textContent=t}function clearWait(t){if($('wait'))$('wait').textContent=t}
-function render(m){if($('wait'))$('wait').remove();const d=document.createElement('div');d.className='m '+(m.from===role?'me':'');const b=document.createElement('div');b.className='bubble';b.textContent=m.text;d.appendChild(b);$('messages').appendChild(d);$('messages').scrollTop=$('messages').scrollHeight}
-function send(){const i=$('input'),t=i.value.trim();if(!t||!socket)return;socket.emit('message',t);i.value=''}
-function leaveChat(){if(socket)socket.emit('leave');$('chatWrap').classList.add('hide');activeRoom=null}
-async function loadReviews(){try{const r=await api('/api/reviews');$('reviewList').innerHTML=r.length?r.map(x=>`<div class="review"><b>${'★'.repeat(x.rating)}${'☆'.repeat(5-x.rating)}</b><p>${escapeHtml(x.text)}</p><span class="small">${new Date(x.created_at).toLocaleDateString()}</span></div>`).join(''):'<p class="muted">No reviews yet.</p>'}catch(e){$('reviewList').textContent=e.message}}
-function escapeHtml(s){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
-$('stars').onclick=e=>{const rect=$('stars').getBoundingClientRect();rating=Math.min(5,Math.max(1,Math.ceil((e.clientX-rect.left)/(rect.width/5))));$('stars').textContent='★'.repeat(rating)+'☆'.repeat(5-rating)};
-async function submitReview(){try{await api('/api/reviews',{method:'POST',body:JSON.stringify({rating,text:$('reviewText').value})});$('reviewText').value='';loadReviews();alert('Review saved.')}catch(e){alert(e.message)}}
-function ownerLogin(){$('ownerMsg').textContent='';$('ownerModal').style.display='grid'}
-function submitOwner(){connect();socket.emit('ownerAuth',$('ownerKey').value)}
-async function loadStats(){try{const s=await api('/api/owner/stats');$('statUsers').textContent=s.users;$('statPasses').textContent=s.passes;$('statReviews').textContent=s.reviews}catch(e){$('ownerMsg').textContent=e.message}}
-document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.tabpage').forEach(x=>x.classList.add('hide'));$(b.dataset.tab).classList.remove('hide');if(b.dataset.tab==='reviews')loadReviews()});
-loadMe();loadReviews();
-</script></body></html>
+
+async function api(url,opts={}){
+  const r=await fetch(url,{
+    headers:{'Content-Type':'application/json'},
+    ...opts
+  });
+
+  const d=await r.json().catch(()=>({}));
+
+  if(!r.ok) throw new Error(d.error||'Request failed');
+
+  return d;
+}
+
+async function selectTopic(topic){
+
+  selectedTopic=topic;
+
+  document.querySelectorAll('.topic').forEach(x=>{
+    x.classList.remove('selected');
+  });
+
+  event.currentTarget.classList.add('selected');
+
+  $('welcome').classList.add('hide');
+  $('chatWrap').classList.add('hide');
+
+  $('topicTitle').textContent=topic;
+  $('paymentBox').classList.add('hide');
+  $('activeBox').classList.add('hide');
+
+  try{
+    await api('/api/topic',{
+      method:'POST',
+      body:JSON.stringify({topic})
+    });
+
+    await loadAccess();
+
+  }catch(e){
+    alert(e.message);
+  }
+}
+
+async function loadAccess(){
+
+  try{
+
+    const d=await api('/api/me');
+
+    accessExpiresAt=d.accessExpiresAt||null;
+
+    if(d.hasAccess){
+
+      $('paymentBox').classList.add('hide');
+      $('welcome').classList.add('hide');
+      $('activeBox').classList.remove('hide');
+
+      $('activeTopic').textContent=
+        selectedTopic ? selectedTopic : (d.topic||'Private conversation');
+
+      $('accessBadge').classList.remove('hide');
+      $('accessBadge').textContent='Access active';
+
+      updateTimer();
+
+    }else{
+
+      $('activeBox').classList.add('hide');
+      $('paymentBox').classList.remove('hide');
+
+      $('accessBadge').classList.add('hide');
+    }
+
+  }catch(e){
+    console.error(e);
+  }
+}
+
+async function unlock(){
+
+  try{
+
+    const d=await api('/api/unlock',{
+      method:'POST'
+    });
+
+    accessExpiresAt=d.expiresAt;
+
+    alert(
+      d.demo
+      ? 'Demo access activated for 24 hours.'
+      : 'Payment successful. 24-hour access activated.'
+    );
+
+    await loadAccess();
+
+  }catch(e){
+    alert(e.message);
+  }
+}
+
+function updateTimer(){
+
+  if(!accessExpiresAt) return;
+
+  const remaining=
+    new Date(accessExpiresAt).getTime()-Date.now();
+
+  if(remaining<=0){
+
+    $('timer').textContent='Access expired.';
+
+    $('chatWrap').classList.add('hide');
+    $('activeBox').classList.add('hide');
+    $('paymentBox').classList.remove('hide');
+
+    $('accessBadge').textContent='Access expired';
+
+    return;
+  }
+
+  const total=Math.floor(remaining/1000);
+
+  const h=Math.floor(total/3600);
+  const m=Math.floor((total%3600)/60);
+  const s=total%60;
+
+  $('timer').textContent=
+    'Access remaining: '+h+'h '+m+'m '+s+'s';
+
+  $('chatTimer').textContent=
+    'Access remaining: '+h+'h '+m+'m '+s+'s';
+}
+
+setInterval(updateTimer,1000);
+
+function startChat(){
+
+  if(!accessExpiresAt ||
+     new Date(accessExpiresAt)<=new Date()){
+
+    alert('Your 24-hour access has expired.');
+    loadAccess();
+    return;
+  }
+
+  role='visitor';
+
+  $('chatWrap').classList.remove('hide');
+
+  $('messages').innerHTML=
+    '<div id="wait" class="muted" style="text-align:center;padding:60px 10px">Connecting to listener...</div>';
+
+  connect();
+
+  socket.emit('visitorJoin');
+}
+
+function connect(){
+
+  if(socket) socket.disconnect();
+
+  socket=io();
+
+  socket.on('waiting',()=>{
+    setStatus('Waiting for listener...');
+  });
+
+  socket.on('paired',d=>{
+
+    activeRoom=d.room;
+
+    setStatus('Private conversation');
+
+    clearWait('You are connected.');
+
+  });
+
+  socket.on('message',render);
+
+  socket.on('history',h=>{
+    h.forEach(render);
+  });
+
+  socket.on('errorMessage',m=>{
+    alert(m);
+  });
+
+  socket.on('ended',()=>{
+
+    setStatus('Conversation ended');
+
+    $('input').disabled=true;
+
+  });
+
+  socket.on('ownerAuthResult',r=>{
+
+    if(!r.ok){
+
+      $('ownerMsg').textContent='Access denied.';
+
+      return;
+    }
+
+    $('ownerModal').style.display='none';
+
+    $('ownerDash').classList.remove('hide');
+
+  });
+
+  socket.on('waitingList',list=>{
+
+    renderWaiting(list);
+
+  });
+
+  socket.on('newChat',d=>{
+
+    ownerRoom=d.room;
+
+    $('ownerChat').classList.remove('hide');
+
+    $('ownerMessages').innerHTML='';
+
+  });
+
+}
+
+function setStatus(t){
+  $('status').textContent=t;
+}
+
+function clearWait(t){
+
+  if($('wait')) $('wait').textContent=t;
+
+}
+
+function render(m){
+
+  if($('wait')) $('wait').remove();
+
+  const d=document.createElement('div');
+
+  d.className='m '+(m.from===role?'me':'');
+
+  const b=document.createElement('div');
+
+  b.className='bubble';
+
+  b.textContent=m.text;
+
+  d.appendChild(b);
+
+  $('messages').appendChild(d);
+
+  $('messages').scrollTop=$('messages').scrollHeight;
+}
+
+function send(){
+
+  const i=$('input');
+
+  const t=i.value.trim();
+
+  if(!t || !socket) return;
+
+  socket.emit('message',t);
+
+  i.value='';
+
+}
+
+function leaveChat(){
+
+  if(socket) socket.emit('leave');
+
+  $('chatWrap').classList.add('hide');
+
+  activeRoom=null;
+
+}
+
+function showTopics(){
+
+  $('activeBox').classList.add('hide');
+  $('paymentBox').classList.add('hide');
+  $('welcome').classList.remove('hide');
+
+}
+
+async function loadReviews(){
+
+  try{
+
+    const r=await api('/api/reviews');
+
+    $('reviewList').innerHTML=r.length
+
+    ? r.map(x=>`
+      <div class="review">
+        <b>${'★'.repeat(x.rating)}${'☆'.repeat(5-x.rating)}</b>
+        <p>${escapeHtml(x.text)}</p>
+        <span class="small">
+          ${new Date(x.created_at).toLocaleDateString()}
+        </span>
+      </div>
+    `).join('')
+
+    : '<p class="muted">No reviews yet.</p>';
+
+  }catch(e){
+
+    $('reviewList').textContent=e.message;
+
+  }
+
+}
+
+function escapeHtml(s){
+
+  return String(s).replace(/[&<>'"]/g,c=>({
+    '&':'&amp;',
+    '<':'&lt;',
+    '>':'&gt;',
+    "'":'&#39;',
+    '"':'&quot;'
+  }[c]));
+
+}
+
+$('stars').onclick=e=>{
+
+  const rect=$('stars').getBoundingClientRect();
+
+  rating=Math.min(
+    5,
+    Math.max(
+      1,
+      Math.ceil((e.clientX-rect.left)/(rect.width/5))
+    )
+  );
+
+  $('stars').textContent=
+    '★'.repeat(rating)+
+    '☆'.repeat(5-rating);
+
+};
+
+async function submitReview(){
+
+  try{
+
+    await api('/api/reviews',{
+      method:'POST',
+      body:JSON.stringify({
+        rating,
+        text:$('reviewText').value
+      })
+    });
+
+    $('reviewText').value='';
+
+    loadReviews();
+
+    alert('Review saved.');
+
+  }catch(e){
+
+    alert(e.message);
+
+  }
+
+}
+
+function ownerLogin(){
+
+  $('ownerMsg').textContent='';
+
+  $('ownerModal').style.display='grid';
+
+}
+
+function submitOwner(){
+
+  connect();
+
+  socket.emit(
+    'ownerAuth',
+    $('ownerKey').value
+  );
+
+}
+
+function renderWaiting(list){
+
+  const box=$('waitingList');
+
+  if(!list.length){
+
+    box.innerHTML=
+      '<p class="small">No one is waiting.</p>';
+
+    return;
+  }
+
+  box.innerHTML='';
+
+  list.forEach(id=>{
+
+    const div=document.createElement('div');
+
+    div.className='owner-chat';
+
+    div.innerHTML=
+      '<b>Someone is waiting</b><br><br>';
+
+    const btn=document.createElement('button');
+
+    btn.className='primary';
+
+    btn.textContent='Accept Chat';
+
+    btn.onclick=()=>{
+
+      socket.emit('ownerAccept',id);
+
+    };
+
+    div.appendChild(btn);
+
+    box.appendChild(div);
+
+  });
+
+}
+
+function ownerSend(){
+
+  const i=$('ownerInput');
+
+  const t=i.value.trim();
+
+  if(!t || !socket || !ownerRoom) return;
+
+  socket.emit('ownerMessage',{
+    room:ownerRoom,
+    text:t
+  });
+
+  i.value='';
+
+}
+
+document.querySelectorAll('.tab').forEach(b=>{
+
+  b.onclick=()=>{
+
+    document.querySelectorAll('.tab')
+      .forEach(x=>x.classList.remove('active'));
+
+    b.classList.add('active');
+
+    document.querySelectorAll('.tabpage')
+      .forEach(x=>x.classList.add('hide'));
+
+    if(b.dataset.tab==='home'){
+
+      $('welcome').classList.remove('hide');
+
+    }else{
+
+      $(b.dataset.tab).classList.remove('hide');
+
+    }
+
+    if(b.dataset.tab==='reviews')
+      loadReviews();
+
+  };
+
+});
+
+loadReviews();
+
+</script>
+
+</body>
+</html>
