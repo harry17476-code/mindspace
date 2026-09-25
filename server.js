@@ -128,6 +128,8 @@ const rooms = new Map();
 
 const visitorState = new Map();
 
+const accessCodes = new Map();
+
 const socketVisitors = new Map();
 
 const owners = new Set();
@@ -494,120 +496,51 @@ app.post(
   }
 );
 
-
 /* =========================
    TEST PAYMENT / UNLOCK
 ========================= */
 
-app.post(
-  "/api/unlock",
-  (req, res) => {
+app.post("/api/unlock", (req, res) => {
 
-    const visitorId =
-      cleanText(
-        req.body.visitorId,
-        100
-      );
+  const visitorId = cleanText(req.body.visitorId, 100);
 
-    const topic =
-      validTopic(
-        req.body.topic
-      )
-        ? req.body.topic
-        : "Other";
+  const topic = validTopic(req.body.topic)
+    ? req.body.topic
+    : "Other";
 
-
-    if (!visitorId) {
-
-      return res
-        .status(400)
-        .json({
-          ok: false,
-          error:
-            "Visitor ID is required."
-        });
-
-    }
-
-
-    const old =
-      visitorState.get(
-        visitorId
-      );
-
-
-    if (
-      old &&
-      old.expiresAt >
-        Date.now()
-    ) {
-
-      return res.json({
-
-        ok: true,
-
-        alreadyActive:
-          true,
-
-        visitorId,
-
-        topic:
-          old.topic,
-
-        expiresAt:
-          new Date(
-            old.expiresAt
-          ).toISOString()
-
-      });
-
-    }
-
-
-    const expiresAt =
-      Date.now() +
-      ACCESS_TIME;
-
-
-    visitorState.set(
-      visitorId,
-      {
-
-        expiresAt,
-
-        topic,
-
-        roomId:
-          null
-
-      }
-    );
-
-
-    res.json({
-
-      ok: true,
-
-      testPayment:
-        true,
-
-      alreadyActive:
-        false,
-
-      visitorId,
-
-      topic,
-
-      expiresAt:
-        new Date(
-          expiresAt
-        ).toISOString()
-
+  if (!visitorId) {
+    return res.status(400).json({
+      ok: false,
+      error: "Visitor ID is required."
     });
-
   }
-);
 
+  const accessCode = crypto.randomBytes(4).toString("hex").toUpperCase();
+  const expiresAt = Date.now() + ACCESS_TIME;
+
+  visitorState.set(visitorId, {
+    expiresAt,
+    topic,
+    roomId: null
+  });
+
+  accessCodes.set(accessCode, {
+    visitorId,
+    expiresAt,
+    topic
+  });
+
+  res.json({
+    ok: true,
+    testPayment: true,
+    alreadyActive: false,
+    visitorId,
+    accessCode,
+    topic,
+    expiresAt: new Date(expiresAt).toISOString()
+  });
+
+});
 
 /* =========================
    ACCESS STATUS
