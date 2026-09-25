@@ -543,6 +543,45 @@ app.post("/api/unlock", (req, res) => {
 });
 
 /* =========================
+   ACCESS CODE LOGIN
+========================= */
+
+app.post("/api/access-code", (req, res) => {
+
+  const accessCode =
+    cleanText(req.body.accessCode, 20).toUpperCase();
+
+  const access =
+    accessCodes.get(accessCode);
+
+  if (!access || access.expiresAt <= Date.now()) {
+    return res.json({
+      ok: false,
+      error: "Access code is invalid or expired."
+    });
+  }
+
+  const state =
+    visitorState.get(access.visitorId);
+
+  if (!state || state.expiresAt <= Date.now()) {
+    return res.json({
+      ok: false,
+      error: "Access code is expired."
+    });
+  }
+
+  res.json({
+    ok: true,
+    visitorId: access.visitorId,
+    topic: access.topic,
+    expiresAt:
+      new Date(access.expiresAt).toISOString()
+  });
+
+});
+
+/* =========================
    ACCESS STATUS
 ========================= */
 
@@ -561,7 +600,6 @@ app.post(
         visitorId
       );
 
-
     if (
       !state ||
       state.expiresAt <=
@@ -575,12 +613,10 @@ app.post(
 
     }
 
-
     const room =
       getActiveRoom(
         visitorId
       );
-
 
     res.json({
 
