@@ -1708,39 +1708,19 @@ function addSystemMessage(
 function sendMessage(){
 
   const input =
-    document.getElementById(
-      "messageInput"
-    );
-
+    document.getElementById("messageInput");
 
   const text =
     input.value.trim();
 
+  if(!text || !socket) return;
 
-  if (
-    !text ||
-    !socket
-  ){
+  socket.emit("message", {
+    text: text
+  });
 
-    return;
-
-  }
-
-
-  socket.emit(
-    "message",
-    {
-      text
-    }
-  );
-
-
-  input.value =
-    "";
-
+  input.value = "";
 }
-
-
 /* =====================
    TIMER
 ===================== */
