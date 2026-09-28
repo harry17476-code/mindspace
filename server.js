@@ -267,11 +267,10 @@ async function updateWaitingList() {
             const result =
               await pool.query(
                 `
-                SELECT
-                  display_name
-                FROM mindspace_customers
-                WHERE visitor_id = $1
-                `,
+            SELECT
+  username
+FROM mindspace_customers
+WHERE visitor_id = $1
                 [
                   customer.visitorId
                 ]
@@ -279,8 +278,8 @@ async function updateWaitingList() {
 
             if (result.rows.length > 0) {
 
-              displayName =
-                result.rows[0].display_name;
+           displayName =
+  result.rows[0].username;
 
             }
 
@@ -341,10 +340,10 @@ async function updateActiveRooms() {
             const result =
               await pool.query(
                 `
-                SELECT
-                  display_name
-                FROM mindspace_customers
-                WHERE visitor_id = $1
+       SELECT
+  username
+FROM mindspace_customers
+WHERE visitor_id = $1
                 `,
                 [
                   room.visitorId
@@ -355,8 +354,8 @@ async function updateActiveRooms() {
               result.rows.length > 0
             ) {
 
-              displayName =
-                result.rows[0].display_name;
+         displayName =
+  result.rows[0].username;
 
             }
 
