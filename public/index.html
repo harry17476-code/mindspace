@@ -2110,30 +2110,29 @@ function ownerLogin(){
     }
   );
 
+socket.on(
+  "waitingList",
+  list => {
 
-  socket.on(
-    "waitingList",
-    list => {
+    renderWaiting(
+      list
+    );
 
-      renderWaiting(
-        list
-      );
-
-    }
-  );
+  }
+);
 
 
-  socket.on(
-    "activeRooms",
-    list => {
+socket.on(
+  "activeRooms",
+  list => {
 
-      renderActiveRooms(
-        list
-      );
+    renderActiveRooms(
+      list
+    );
 
-    }
-  );
-
+  }
+);
+ 
 
   socket.on(
     "newChat",
@@ -2257,7 +2256,6 @@ function ownerLogin(){
 
 }
 
-
 /* =====================
    WAITING CUSTOMERS
 ===================== */
@@ -2312,8 +2310,18 @@ function renderWaiting(
           <div>
 
             <b>
-              New customer waiting
+              ${escapeHtml(
+                customer.displayName ||
+                "Customer"
+              )}
             </b>
+
+            <div class="owner-small">
+              ID:
+              ${escapeHtml(
+                customer.visitorId
+              )}
+            </div>
 
             <div class="owner-small">
               Topic:
@@ -2375,7 +2383,6 @@ function acceptCustomer(
 
 }
 
-
 /* =====================
    ACTIVE ROOMS
 ===================== */
@@ -2424,8 +2431,19 @@ function renderActiveRooms(
       card.innerHTML = `
 
         <b>
-          Private customer
+          ${escapeHtml(
+            room.displayName ||
+            "Customer"
+          )}
         </b>
+
+        <div class="owner-small">
+          ID:
+          ${escapeHtml(
+            room.visitorId ||
+            ""
+          )}
+        </div>
 
         <div class="owner-small">
           Topic:
