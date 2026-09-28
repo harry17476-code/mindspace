@@ -49,7 +49,6 @@ const apiLimiter = rateLimit({
 
 app.use("/api/", apiLimiter);
 
-
 /* =========================
    DATABASE
 ========================= */
@@ -75,14 +74,28 @@ if (process.env.DATABASE_URL) {
       CREATE TABLE IF NOT EXISTS mindspace_messages (
         id BIGSERIAL PRIMARY KEY,
         room_id TEXT NOT NULL,
+        visitor_id TEXT,
         sender TEXT NOT NULL,
         message TEXT NOT NULL,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
 
+      ALTER TABLE mindspace_messages
+      ADD COLUMN IF NOT EXISTS visitor_id TEXT;
+
       CREATE INDEX IF NOT EXISTS
       mindspace_messages_room_idx
       ON mindspace_messages(room_id, created_at);
+
+      CREATE INDEX IF NOT EXISTS
+      mindspace_messages_visitor_idx
+      ON mindspace_messages(visitor_id, created_at);
+
+      CREATE TABLE IF NOT EXISTS mindspace_customers (
+        visitor_id TEXT PRIMARY KEY,
+        display_name TEXT NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
 
       CREATE TABLE IF NOT EXISTS mindspace_feedback (
         id BIGSERIAL PRIMARY KEY,
