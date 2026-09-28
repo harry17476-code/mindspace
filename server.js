@@ -91,11 +91,20 @@ if (process.env.DATABASE_URL) {
       mindspace_messages_visitor_idx
       ON mindspace_messages(visitor_id, created_at);
 
-      CREATE TABLE IF NOT EXISTS mindspace_customers (
-        visitor_id TEXT PRIMARY KEY,
-        display_name TEXT NOT NULL,
-        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-      );
+    CREATE TABLE IF NOT EXISTS mindspace_customers (
+  visitor_id TEXT PRIMARY KEY,
+  username TEXT UNIQUE NOT NULL,
+  password TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE mindspace_customers
+ADD COLUMN IF NOT EXISTS username TEXT;
+
+ALTER TABLE mindspace_customers
+ADD COLUMN IF NOT EXISTS password TEXT;
+ALTER TABLE mindspace_customers
+ALTER COLUMN display_name DROP NOT NULL;
 
       CREATE TABLE IF NOT EXISTS mindspace_feedback (
         id BIGSERIAL PRIMARY KEY,
@@ -622,11 +631,17 @@ app.post(
 
 app.post("/api/unlock", async (req, res) => {
 
-  const displayName =
-    cleanText(req.body.displayName, 50);
+  const username =
+    cleanText(
+      req.body.username,
+      30
+    );
 
-  let visitorId =
-    cleanText(req.body.visitorId, 100);
+  const password =
+    cleanText(
+      req.body.password,
+      100
+    );
 
   const topic =
     validTopic(req.body.topic)
@@ -635,82 +650,111 @@ app.post("/api/unlock", async (req, res) => {
 
 
   /* =========================
-     CHECK DISPLAY NAME
+     CHECK USERNAME / PASSWORD
   ========================= */
 
-  if (!displayName && !visitorId) {
+  if (!username || !password) {
 
     return res.status(400).json({
       ok: false,
-      error: "Display name is required."
+      error:
+        "Username and password are required."
     });
 
   }
 
 
-  /* =========================
-     CREATE / FIND CUSTOMER
-  ========================= */
-
   try {
 
-    if (databaseReady) {
-
-      if (!visitorId) {
-
-        visitorId =
-          createCustomerId();
-
-        await pool.query(
-          `
-          INSERT INTO
-          mindspace_customers
-          (visitor_id, display_name)
-          VALUES ($1, $2)
-          `,
-          [
-            visitorId,
-            displayName
-          ]
-        );
-
-      } else {
-
-        const result =
-          await pool.query(
-            `
-            SELECT
-              visitor_id,
-              display_name
-            FROM mindspace_customers
-            WHERE visitor_id = $1
-            `,
-            [visitorId]
-          );
-
-        if (result.rows.length === 0) {
-
-          return res.status(400).json({
-            ok: false,
-            error: "Customer ID not found."
-          });
-
-        }
-
-      }
-
-    } else {
+    if (!databaseReady) {
 
       return res.status(503).json({
         ok: false,
-        error: "Database is not ready."
+        error:
+          "Database is not ready."
       });
 
     }
 
 
     /* =========================
-       CREATE ACCESS
+       FIND EXISTING CUSTOMER
+    ========================= */
+
+    const existing =
+      await pool.query(
+        `
+        SELECT
+          visitor_id,
+          username,
+          password
+        FROM mindspace_customers
+        WHERE username = $1
+        `,
+        [username]
+      );
+
+
+    let visitorId;
+
+
+    if (existing.rows.length > 0) {
+
+      const customer =
+        existing.rows[0];
+
+
+      if (
+        customer.password !==
+        password
+      ) {
+
+        return res.status(401).json({
+          ok: false,
+          error:
+            "Wrong password."
+        });
+
+      }
+
+
+      visitorId =
+        customer.visitor_id;
+
+
+    } else {
+
+      /* =========================
+         CREATE NEW CUSTOMER
+      ========================= */
+
+      visitorId =
+        createCustomerId();
+
+
+      await pool.query(
+        `
+        INSERT INTO
+        mindspace_customers
+        (
+          visitor_id,
+          username,
+          password
+        )
+        VALUES ($1, $2, $3)
+        `,
+        [
+          visitorId,
+          username,
+          password
+        ]
+      );
+
+    }
+
+
+    /* =========================
+       CREATE 24-HOUR ACCESS
     ========================= */
 
     const accessCode =
@@ -718,26 +762,29 @@ app.post("/api/unlock", async (req, res) => {
         .toString("hex")
         .toUpperCase();
 
+
     const expiresAt =
       Date.now() + ACCESS_TIME;
 
 
-    visitorState.set(visitorId, {
-
-      expiresAt,
-      topic,
-      roomId: null
-
-    });
-
-
-    accessCodes.set(accessCode, {
-
+    visitorState.set(
       visitorId,
-      expiresAt,
-      topic
+      {
+        expiresAt,
+        topic,
+        roomId: null
+      }
+    );
 
-    });
+
+    accessCodes.set(
+      accessCode,
+      {
+        visitorId,
+        expiresAt,
+        topic
+      }
+    );
 
 
     /* =========================
@@ -754,17 +801,19 @@ app.post("/api/unlock", async (req, res) => {
 
       visitorId,
 
-      displayName,
+      username,
 
       accessCode,
 
       topic,
 
       expiresAt:
-        new Date(expiresAt)
-          .toISOString()
+        new Date(
+          expiresAt
+        ).toISOString()
 
     });
+
 
   } catch (error) {
 
@@ -772,6 +821,7 @@ app.post("/api/unlock", async (req, res) => {
       "Customer creation failed:",
       error.message
     );
+
 
     res.status(500).json({
 
@@ -790,114 +840,6 @@ app.post("/api/unlock", async (req, res) => {
 /* =========================
    ACCESS CODE LOGIN
 ========================= */
-
-app.post("/api/access-code", (req, res) => {
-
-  const accessCode =
-    cleanText(req.body.accessCode, 20).toUpperCase();
-
-  const access =
-    accessCodes.get(accessCode);
-
-  if (!access || access.expiresAt <= Date.now()) {
-    return res.json({
-      ok: false,
-      error: "Access code is invalid or expired."
-    });
-  }
-
-  const state =
-    visitorState.get(access.visitorId);
-
-  if (!state || state.expiresAt <= Date.now()) {
-    return res.json({
-      ok: false,
-      error: "Access code is expired."
-    });
-  }
-
-  res.json({
-    ok: true,
-    visitorId: access.visitorId,
-    topic: access.topic,
-    expiresAt:
-      new Date(access.expiresAt).toISOString()
-  });
-
-});
-
-/* =========================
-   ACCESS STATUS
-========================= */
-
-app.post(
-  "/api/access-status",
-  (req, res) => {
-
-    const visitorId =
-      cleanText(
-        req.body.visitorId,
-        100
-      );
-
-    const state =
-      visitorState.get(
-        visitorId
-      );
-
-    if (
-      !state ||
-      state.expiresAt <=
-        Date.now()
-    ) {
-
-      return res.json({
-        ok: true,
-        active: false
-      });
-
-    }
-
-    const room =
-      getActiveRoom(
-        visitorId
-      );
-
-    res.json({
-
-      ok: true,
-
-      active: true,
-
-      topic:
-        state.topic,
-
-      expiresAt:
-        new Date(
-          state.expiresAt
-        ).toISOString(),
-
-      roomId:
-        room
-          ? room.roomId
-          : null,
-
-      paired:
-        Boolean(
-          room &&
-          room.ownerSocketId
-        )
-
-    });
-
-  }
-);
-
-
-/* =========================
-   FEEDBACK
-========================= */
-
 app.post(
   "/api/feedback",
   async (req, res) => {
