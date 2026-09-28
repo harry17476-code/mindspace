@@ -304,44 +304,65 @@ function updateActiveRooms() {
   }
 }
 
-
 /* =========================
    HISTORY
 ========================= */
 
 async function getHistory(roomId) {
 
-  if (databaseReady) {
-
-    const result =
-      await pool.query(
-        `
-        SELECT
-          sender,
-          message,
-          created_at
-        FROM mindspace_messages
-        WHERE room_id = $1
-        ORDER BY created_at ASC
-        LIMIT 500
-        `,
-        [roomId]
-      );
-
-    return result.rows.map(row => ({
-      from:
-        row.sender,
-
-      text:
-        row.message,
-
-      createdAt:
-        row.created_at
-    }));
-  }
-
   const room =
     rooms.get(roomId);
+
+  const visitorId =
+    room?.visitorId || null;
+
+  if (databaseReady) {
+
+    let result;
+
+    if (visitorId) {
+
+      result =
+        await pool.query(
+          `
+          SELECT
+            sender,
+            message,
+            created_at
+          FROM mindspace_messages
+          WHERE visitor_id = $1
+          ORDER BY created_at ASC
+          LIMIT 500
+          `,
+          [visitorId]
+        );
+
+    } else {
+
+      result =
+        await pool.query(
+          `
+          SELECT
+            sender,
+            message,
+            created_at
+          FROM mindspace_messages
+          WHERE room_id = $1
+          ORDER BY created_at ASC
+          LIMIT 500
+          `,
+          [roomId]
+        );
+
+    }
+
+    return result.rows.map(row => ({
+      from: row.sender,
+      text: row.message,
+      createdAt: row.created_at
+    }));
+
+  }
 
   if (!room) {
     return [];
@@ -362,18 +383,10 @@ async function saveMessage(
 ) {
 
   const message = {
-
-    from:
-      sender,
-
-    text:
-      text,
-
-    createdAt:
-      new Date().toISOString()
-
+    from: sender,
+    text: text,
+    createdAt: new Date().toISOString()
   };
-
 
   const room =
     rooms.get(roomId);
@@ -385,8 +398,7 @@ async function saveMessage(
     );
 
     if (
-      room.messages.length >
-      500
+      room.messages.length > 500
     ) {
 
       room.messages.shift();
@@ -395,25 +407,27 @@ async function saveMessage(
 
   }
 
-
   if (databaseReady) {
+
+    const visitorId =
+      room?.visitorId || null;
 
     await pool.query(
       `
       INSERT INTO
       mindspace_messages
-      (room_id, sender, message)
-      VALUES ($1, $2, $3)
+      (room_id, visitor_id, sender, message)
+      VALUES ($1, $2, $3, $4)
       `,
       [
         roomId,
+        visitorId,
         sender,
         text
       ]
     );
 
   }
-
 
   return message;
 }
