@@ -1249,7 +1249,6 @@ function chooseTopic(
   );
 
 }
-
 /* =====================
    PAYMENT / UNLOCK
 ===================== */
@@ -1266,16 +1265,32 @@ async function payAndStart(){
   }
 
 
-  const displayName =
+  const username =
     prompt(
-      "Enter your display name:"
+      "Choose your username:"
     );
 
 
-  if (!displayName){
+  if (!username){
 
     alert(
-      "Display name is required."
+      "Username is required."
+    );
+
+    return;
+  }
+
+
+  const password =
+    prompt(
+      "Create your password:"
+    );
+
+
+  if (!password){
+
+    alert(
+      "Password is required."
     );
 
     return;
@@ -1293,11 +1308,11 @@ async function payAndStart(){
           body:
             JSON.stringify({
 
-              displayName:
-                displayName.trim(),
+              username:
+                username.trim(),
 
-              visitorId:
-                visitorId || "",
+              password:
+                password,
 
               topic:
                 selectedTopic
@@ -1307,13 +1322,15 @@ async function payAndStart(){
       );
 
 
-visitorId =
-  data.visitorId;
+    visitorId =
+      data.visitorId;
 
-localStorage.setItem(
-  "mindspaceVisitorId",
-  visitorId
-);
+
+    localStorage.setItem(
+      "mindspaceVisitorId",
+      visitorId
+    );
+
 
     currentRoom =
       data.roomId ||
