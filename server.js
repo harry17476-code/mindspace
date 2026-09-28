@@ -317,30 +317,73 @@ async function updateWaitingList() {
    ACTIVE ROOMS
 ========================= */
 
-function updateActiveRooms() {
+async function updateActiveRooms() {
 
   const list =
-    [...rooms.values()]
-      .map(room => ({
-        room:
-          room.roomId,
+    await Promise.all(
+      [...rooms.values()]
+        .map(async room => {
 
-        visitorId:
-          room.visitorId,
+          let displayName =
+            "Customer";
 
-        topic:
-          room.topic,
+          if (databaseReady) {
 
-        connected:
-          Boolean(
-            room.visitorSocketId
-          ),
+            const result =
+              await pool.query(
+                `
+                SELECT
+                  display_name
+                FROM mindspace_customers
+                WHERE visitor_id = $1
+                `,
+                [
+                  room.visitorId
+                ]
+              );
 
-        startedAt:
-          room.createdAt
-      }));
+            if (
+              result.rows.length > 0
+            ) {
 
-  for (const ownerSocket of owners) {
+              displayName =
+                result.rows[0].display_name;
+
+            }
+
+          }
+
+          return {
+
+            room:
+              room.roomId,
+
+            visitorId:
+              room.visitorId,
+
+            displayName,
+
+            topic:
+              room.topic,
+
+            connected:
+              Boolean(
+                room.visitorSocketId
+              ),
+
+            startedAt:
+              room.createdAt
+
+          };
+
+        })
+    );
+
+
+  for (
+    const ownerSocket
+    of owners
+  ) {
 
     io
       .to(ownerSocket)
@@ -350,7 +393,9 @@ function updateActiveRooms() {
       );
 
   }
+
 }
+
 
 /* =========================
    HISTORY
