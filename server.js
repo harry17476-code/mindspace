@@ -149,7 +149,6 @@ const owners = new Set();
 
 const feedbackMemory = [];
 
-
 /* =========================
    HELPERS
 ========================= */
@@ -182,6 +181,17 @@ function createId(prefix = "") {
   return (
     prefix +
     crypto.randomBytes(10).toString("hex")
+  );
+}
+
+
+function createCustomerId() {
+
+  return (
+    "MS-" +
+    crypto.randomBytes(5)
+      .toString("hex")
+      .toUpperCase()
   );
 }
 
@@ -527,47 +537,172 @@ app.post(
    TEST PAYMENT / UNLOCK
 ========================= */
 
-app.post("/api/unlock", (req, res) => {
+app.post("/api/unlock", async (req, res) => {
 
-  const visitorId = cleanText(req.body.visitorId, 100);
+  const displayName =
+    cleanText(req.body.displayName, 50);
 
-  const topic = validTopic(req.body.topic)
-    ? req.body.topic
-    : "Other";
+  let visitorId =
+    cleanText(req.body.visitorId, 100);
 
-  if (!visitorId) {
+  const topic =
+    validTopic(req.body.topic)
+      ? req.body.topic
+      : "Other";
+
+
+  /* =========================
+     CHECK DISPLAY NAME
+  ========================= */
+
+  if (!displayName && !visitorId) {
+
     return res.status(400).json({
       ok: false,
-      error: "Visitor ID is required."
+      error: "Display name is required."
     });
+
   }
 
-  const accessCode = crypto.randomBytes(4).toString("hex").toUpperCase();
-  const expiresAt = Date.now() + ACCESS_TIME;
 
-  visitorState.set(visitorId, {
-    expiresAt,
-    topic,
-    roomId: null
-  });
+  /* =========================
+     CREATE / FIND CUSTOMER
+  ========================= */
 
-  accessCodes.set(accessCode, {
-    visitorId,
-    expiresAt,
-    topic
-  });
+  try {
 
-  res.json({
-    ok: true,
-    testPayment: true,
-    alreadyActive: false,
-    visitorId,
-    accessCode,
-    topic,
-    expiresAt: new Date(expiresAt).toISOString()
-  });
+    if (databaseReady) {
+
+      if (!visitorId) {
+
+        visitorId =
+          createCustomerId();
+
+        await pool.query(
+          `
+          INSERT INTO
+          mindspace_customers
+          (visitor_id, display_name)
+          VALUES ($1, $2)
+          `,
+          [
+            visitorId,
+            displayName
+          ]
+        );
+
+      } else {
+
+        const result =
+          await pool.query(
+            `
+            SELECT
+              visitor_id,
+              display_name
+            FROM mindspace_customers
+            WHERE visitor_id = $1
+            `,
+            [visitorId]
+          );
+
+        if (result.rows.length === 0) {
+
+          return res.status(400).json({
+            ok: false,
+            error: "Customer ID not found."
+          });
+
+        }
+
+      }
+
+    } else {
+
+      return res.status(503).json({
+        ok: false,
+        error: "Database is not ready."
+      });
+
+    }
+
+
+    /* =========================
+       CREATE ACCESS
+    ========================= */
+
+    const accessCode =
+      crypto.randomBytes(4)
+        .toString("hex")
+        .toUpperCase();
+
+    const expiresAt =
+      Date.now() + ACCESS_TIME;
+
+
+    visitorState.set(visitorId, {
+
+      expiresAt,
+      topic,
+      roomId: null
+
+    });
+
+
+    accessCodes.set(accessCode, {
+
+      visitorId,
+      expiresAt,
+      topic
+
+    });
+
+
+    /* =========================
+       RESPONSE
+    ========================= */
+
+    res.json({
+
+      ok: true,
+
+      testPayment: true,
+
+      alreadyActive: false,
+
+      visitorId,
+
+      displayName,
+
+      accessCode,
+
+      topic,
+
+      expiresAt:
+        new Date(expiresAt)
+          .toISOString()
+
+    });
+
+  } catch (error) {
+
+    console.error(
+      "Customer creation failed:",
+      error.message
+    );
+
+    res.status(500).json({
+
+      ok: false,
+
+      error:
+        "Unable to create customer."
+
+    });
+
+  }
 
 });
+
 
 /* =========================
    ACCESS CODE LOGIN
