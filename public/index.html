@@ -1086,21 +1086,8 @@ let visitorId =
     "mindspaceVisitorId"
   );
 
-
-if (!visitorId) {
-
-  visitorId =
-    "visitor_" +
-    crypto.randomUUID();
-
-  localStorage.setItem(
-    "mindspaceVisitorId",
-    visitorId
-  );
-
-}
-
-
+// Permanent MS-ID is created by the server
+// when the customer unlocks their first chat.
 /* =====================
    API
 ===================== */
@@ -1263,7 +1250,6 @@ function chooseTopic(
 
 }
 
-
 /* =====================
    PAYMENT / UNLOCK
 ===================== */
@@ -1280,6 +1266,22 @@ async function payAndStart(){
   }
 
 
+  const displayName =
+    prompt(
+      "Enter your display name:"
+    );
+
+
+  if (!displayName){
+
+    alert(
+      "Display name is required."
+    );
+
+    return;
+  }
+
+
   try{
 
     const data =
@@ -1290,17 +1292,28 @@ async function payAndStart(){
 
           body:
             JSON.stringify({
-              visitorId,
+
+              displayName:
+                displayName.trim(),
+
+              visitorId:
+                visitorId || "",
+
               topic:
                 selectedTopic
+
             })
         }
       );
 
 
-    accessExpires =
-      data.expiresAt;
+visitorId =
+  data.visitorId;
 
+localStorage.setItem(
+  "mindspaceVisitorId",
+  visitorId
+);
 
     currentRoom =
       data.roomId ||
