@@ -1080,15 +1080,20 @@ let selectedRating = 0;
 
 let timerInterval = null;
 
-
 let visitorId =
   localStorage.getItem(
     "mindspaceVisitorId"
   );
 
+let customerUsername =
+  localStorage.getItem(
+    "mindspaceUsername"
+  );
+
 // Permanent MS-ID is created by the server
 // when the customer unlocks their first chat.
-/* =====================
+  
+  /* =====================
    API
 ===================== */
 
@@ -1322,8 +1327,11 @@ async function payAndStart(){
       );
 
 
-    visitorId =
+       visitorId =
       data.visitorId;
+
+    customerUsername =
+      data.username;
 
 
     localStorage.setItem(
@@ -1331,6 +1339,10 @@ async function payAndStart(){
       visitorId
     );
 
+    localStorage.setItem(
+      "mindspaceUsername",
+      customerUsername
+    );
 
     currentRoom =
       data.roomId ||
@@ -1409,15 +1421,18 @@ function connectVisitor(){
     "connect",
     () => {
 
-      socket.emit(
-        "visitorJoin",
-        {
-          visitorId,
+    socket.emit(
+  "visitorJoin",
+  {
+    visitorId,
 
-          topic:
-            selectedTopic
-        }
-      );
+    username:
+      customerUsername,
+
+    topic:
+      selectedTopic
+  }
+);
 
     }
   );
@@ -1496,10 +1511,11 @@ function connectVisitor(){
       messages.forEach(
         message => {
 
-          addMessage(
-            message.from,
-            message.text
-          );
+addMessage(
+  message.from,
+  message.text,
+  message.username
+);
 
         }
       );
@@ -1512,10 +1528,11 @@ function connectVisitor(){
     "message",
     message => {
 
-      addMessage(
-        message.from,
-        message.text
-      );
+ addMessage(
+  message.from,
+  message.text,
+  message.username
+);
 
     }
   );
@@ -1635,10 +1652,10 @@ function resetCustomerMessages(){
 
 }
 
-
 function addMessage(
   from,
-  text
+  text,
+  username
 ){
 
   const box =
@@ -1672,8 +1689,40 @@ function addMessage(
     "bubble";
 
 
-  bubble.textContent =
+  if (username) {
+
+    const name =
+      document.createElement(
+        "div"
+      );
+
+    name.textContent =
+      username;
+
+    name.style.fontWeight =
+      "bold";
+
+    name.style.marginBottom =
+      "4px";
+
+    bubble.appendChild(
+      name
+    );
+
+  }
+
+
+  const messageText =
+    document.createElement(
+      "div"
+    );
+
+  messageText.textContent =
     text;
+
+  bubble.appendChild(
+    messageText
+  );
 
 
   row.appendChild(
@@ -1734,23 +1783,29 @@ function addSystemMessage(
 
 }
 
-
 function sendMessage(){
 
   const input =
-    document.getElementById("messageInput");
+    document.getElementById(
+      "messageInput"
+    );
 
   const text =
     input.value.trim();
 
   if(!text || !socket) return;
 
-  socket.emit("message", {
-    text: text
-  });
+  socket.emit(
+    "message",
+    {
+      text: text
+    }
+  );
 
   input.value = "";
 }
+
+
 /* =====================
    TIMER
 ===================== */
