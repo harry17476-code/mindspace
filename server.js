@@ -234,33 +234,70 @@ function getActiveRoom(visitorId) {
   return room;
 }
 
-
 /* =========================
    WAITING LIST
 ========================= */
 
-function updateWaitingList() {
+async function updateWaitingList() {
 
   const list =
-    [...waiting.values()]
-      .filter(
-        customer =>
-          customer.expiresAt >
-          Date.now()
-      )
-      .map(customer => ({
-        visitorId:
-          customer.visitorId,
+    await Promise.all(
+      [...waiting.values()]
+        .filter(
+          customer =>
+            customer.expiresAt >
+            Date.now()
+        )
+        .map(async customer => {
 
-        socketId:
-          customer.socketId,
+          let displayName =
+            "Customer";
 
-        topic:
-          customer.topic,
+          if (databaseReady) {
 
-        waitingSince:
-          customer.waitingSince
-      }));
+            const result =
+              await pool.query(
+                `
+                SELECT
+                  display_name
+                FROM mindspace_customers
+                WHERE visitor_id = $1
+                `,
+                [
+                  customer.visitorId
+                ]
+              );
+
+            if (result.rows.length > 0) {
+
+              displayName =
+                result.rows[0].display_name;
+
+            }
+
+          }
+
+          return {
+
+            visitorId:
+              customer.visitorId,
+
+            displayName,
+
+            socketId:
+              customer.socketId,
+
+            topic:
+              customer.topic,
+
+            waitingSince:
+              customer.waitingSince
+
+          };
+
+        })
+    );
+
 
   for (const ownerSocket of owners) {
 
@@ -272,6 +309,7 @@ function updateWaitingList() {
       );
 
   }
+
 }
 
 
