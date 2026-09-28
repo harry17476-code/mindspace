@@ -483,12 +483,16 @@ async function saveMessage(
   text
 ) {
 
-  const message = {
-    from: sender,
-    text: text,
-    createdAt: new Date().toISOString()
-  };
-
+const message = {
+  from: sender,
+  text: text,
+  username:
+    sender === "owner"
+      ? "Listener"
+      : null,
+  createdAt:
+    new Date().toISOString()
+};
   const room =
     rooms.get(roomId);
 
@@ -543,6 +547,26 @@ function sendRoomMessage(
   message
 ) {
 
+  const visitorMessage = {
+    from: message.from,
+    text: message.text,
+    username:
+      message.from === "visitor"
+        ? message.username
+        : "Listener"
+  };
+
+
+  const ownerMessage = {
+    from: message.from,
+    text: message.text,
+    username:
+      message.from === "visitor"
+        ? message.username
+        : "Listener"
+  };
+
+
   if (
     room.visitorSocketId
   ) {
@@ -551,7 +575,7 @@ function sendRoomMessage(
       .to(room.visitorSocketId)
       .emit(
         "message",
-        message
+        visitorMessage
       );
 
   }
@@ -565,13 +589,12 @@ function sendRoomMessage(
       .to(room.ownerSocketId)
       .emit(
         "message",
-        message
+        ownerMessage
       );
 
   }
 
 }
-
 
 /* =========================
    API
@@ -951,7 +974,11 @@ io.on(
             data?.topic,
             50
           );
-
+const username =
+  cleanText(
+    data?.username,
+    30
+  );
 
         if (
           !visitorId ||
@@ -986,12 +1013,13 @@ io.on(
           return;
         }
 
-
-        socketVisitors.set(
-          socket.id,
-          visitorId
-        );
-
+socketVisitors.set(
+  socket.id,
+  {
+    visitorId,
+    username
+  }
+);
 
         /* Existing room */
 
@@ -1429,10 +1457,16 @@ io.on(
       "message",
       async data => {
 
-        const visitorId =
-          socketVisitors.get(
-            socket.id
-          );
+  const visitorData =
+  socketVisitors.get(
+    socket.id
+  );
+
+const visitorId =
+  visitorData?.visitorId;
+
+const username =
+  visitorData?.username;
 
 
         if (!visitorId) {
@@ -1500,13 +1534,15 @@ io.on(
         }
 
 
-        const message =
-          await saveMessage(
-            room.roomId,
-            "visitor",
-            text
-          );
+       const message =
+  await saveMessage(
+    room.roomId,
+    "visitor",
+    text
+  );
 
+message.username =
+  username;
 
         sendRoomMessage(
           room,
@@ -1593,13 +1629,15 @@ io.on(
         }
 
 
-        const message =
-          await saveMessage(
-            room.roomId,
-            "owner",
-            text
-          );
+      const message =
+  await saveMessage(
+    room.roomId,
+    "owner",
+    text
+  );
 
+message.username =
+  "Listener";
 
         sendRoomMessage(
           room,
@@ -1696,11 +1734,13 @@ io.on(
     socket.on(
       "disconnect",
       () => {
+const visitorData =
+  socketVisitors.get(
+    socket.id
+  );
 
-        const visitorId =
-          socketVisitors.get(
-            socket.id
-          );
+const visitorId =
+  visitorData?.visitorId;
 
 
         if (visitorId) {
